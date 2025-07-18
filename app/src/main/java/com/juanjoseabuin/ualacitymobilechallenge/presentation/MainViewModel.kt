@@ -47,10 +47,11 @@ class MainViewModel(
         when (action) {
             MainUiAction.LoadInitialCities -> loadCities()
             is MainUiAction.SearchCity -> {
-                // Update the search value in the UI state immediately for responsiveness
                 _uiState.update { it.copy(searchValue = action.prefix, error = null) }
-                // Update the internal flow that triggers the debounced search
                 _searchPrefixInternal.value = action.prefix
+            }
+            is MainUiAction.ToggleFavorite -> {
+                toggleFavoriteStatus(action.cityId)
             }
         }
     }
@@ -98,6 +99,19 @@ class MainViewModel(
         }
     }
 
+    private fun toggleFavoriteStatus(cityId: Long) {
+        _uiState.update { currentState ->
+            val updatedCities = currentState.cities.map { city ->
+                if (city.id == cityId) {
+                    city.copy(isFavorite = !city.isFavorite) // Toggle the boolean
+                } else {
+                    city
+                }
+            }
+            currentState.copy(cities = updatedCities) // Update the state with the new list
+        }
+    }
+
     data class MainUiState(
         val isLoading: Boolean = false,
         val cities: List<City> = emptyList(),
@@ -108,5 +122,6 @@ class MainViewModel(
     sealed class MainUiAction {
         data object LoadInitialCities : MainUiAction()
         data class SearchCity(val prefix: String) : MainUiAction()
+        data class ToggleFavorite(val cityId: Long) : MainUiAction()
     }
 }
