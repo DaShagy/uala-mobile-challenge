@@ -27,8 +27,8 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
-import com.juanjoseabuin.ualacitymobilechallenge.data.utils.CityDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.utils.LocalCityDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.LocalJsonCityDataSourceImpl
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.utils.ViewModelDelegate.viewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
@@ -37,7 +37,7 @@ import kotlinx.serialization.json.Json
 class MainActivity : ComponentActivity() {
 
     private lateinit var cityRepository: CityRepository
-    private lateinit var localDataSource: CityDataSource
+    private lateinit var localDataSource: CityJsonDataSource
 
     private val viewModel by viewModel<MainViewModel> {
         MainViewModel(cityRepository)
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        localDataSource = LocalCityDataSource(
+        localDataSource = LocalJsonCityDataSourceImpl(
             applicationContext,
             Json { ignoreUnknownKeys = true}
         )

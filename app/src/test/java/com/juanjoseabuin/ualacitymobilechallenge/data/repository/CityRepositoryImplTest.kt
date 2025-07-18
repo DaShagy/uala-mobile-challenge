@@ -1,6 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
-import com.juanjoseabuin.ualacitymobilechallenge.data.utils.CityDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.utils.TestUtils
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import io.mockk.coEvery
@@ -23,7 +23,7 @@ class CityRepositoryImplTest {
 
     private lateinit var cityRepository: CityRepositoryImpl
 
-    private val mockLocalDataSource: CityDataSource = mockk()
+    private val mockLocalDataSource: CityJsonDataSource = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
     private val testCities: List<City> by lazy {
