@@ -4,11 +4,14 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -34,16 +37,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             UalaCityMobileChallengeTheme {
                 val cities = viewModel.cities.collectAsState()
+                val searchValue = viewModel.searchValue.collectAsState()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LazyColumn(
+                    Column(
                         modifier = Modifier.padding(innerPadding)
                     ) {
-                        items(
-                            count = cities.value.size,
-                            key = { cities.value[it].id }
-                        ) {
-                            Text(text = cities.value[it].name)
+                        TextField (
+                            modifier = Modifier.fillMaxWidth(),
+                            value = searchValue.value,
+                            onValueChange = { viewModel.searchCity(it) }
+                        )
+
+                        LazyColumn {
+                            items(
+                                count = cities.value.size,
+                                key = { cities.value[it].id }
+                            ) {
+                                Text(text = cities.value[it].name)
+                            }
                         }
                     }
                 }
