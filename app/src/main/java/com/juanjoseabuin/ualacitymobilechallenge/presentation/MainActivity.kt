@@ -4,21 +4,28 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.dp
+import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
 import com.juanjoseabuin.ualacitymobilechallenge.data.utils.CityDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.utils.LocalCityDataSource
@@ -70,12 +77,29 @@ class MainActivity : ComponentActivity() {
                                 CircularProgressIndicator()
                             }
                         } else {
-                            LazyColumn {
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
                                 items(
                                     count = uiState.cities.size,
                                     key = { uiState.cities[it].id }
                                 ) {
-                                    Text(text = uiState.cities[it].name)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(text = uiState.cities[it].name)
+                                        Icon(
+                                            modifier = Modifier.requiredSize(32.dp).clickable {
+                                                viewModel.handleAction(MainViewModel.MainUiAction.ToggleFavorite(uiState.cities[it].id))
+                                            },
+                                            imageVector = ImageVector.vectorResource(
+                                                if (uiState.cities[it].isFavorite) R.drawable.ic_heart_filled
+                                                else R.drawable.ic_heart_outlined
+                                            ),
+                                            contentDescription = null
+                                        )
+                                    }
                                 }
                             }
                         }

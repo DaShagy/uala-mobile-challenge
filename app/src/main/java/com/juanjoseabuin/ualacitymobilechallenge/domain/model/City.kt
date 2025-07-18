@@ -9,7 +9,8 @@ data class City(
     val id: Long,
     val country: String,
     val name: String,
-    val coord: Coordinates
+    val coord: Coordinates,
+    val isFavorite: Boolean = false
 )
 
 @Serializable
