@@ -1,45 +1,35 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
-import android.content.Context
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.juanjoseabuin.ualacitymobilechallenge.R
+import com.juanjoseabuin.ualacitymobilechallenge.data.utils.CityDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.InputStreamReader
 
 class CityRepositoryImpl(
-    private val context: Context
-): CityRepository {
+    private val cityDataSource: CityDataSource
+) : CityRepository {
 
-    private var cityList: List<City> = listOf()
+    private var _cachedCities: List<City>? = null
 
     override suspend fun getCities(): Result<List<City>> {
-
-        if (cityList.isNotEmpty()) return Result.success(cityList)
-
-        try {
-            val inputStream = context.resources.openRawResource(R.raw.cities)
-            val reader = InputStreamReader(inputStream)
-
-            val cityListType = object : TypeToken<List<City>>() {}.type
-            cityList = Gson().fromJson<List<City>?>(reader, cityListType).sortedBy { it.name }
-
-            withContext(Dispatchers.IO) {
-                reader.close()
+        if (_cachedCities == null) {
+            val result = cityDataSource.getCities()
+            if (result.isSuccess) {
+                _cachedCities = result.getOrNull()
             }
-
-            return Result.success(cityList)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return Result.failure(e)
+            return result
+        } else {
+            return Result.success(_cachedCities!!)
         }
     }
 
     override suspend fun searchCities(prefix: String): Result<List<City>> {
-        val filteredCityList = cityList.filter { it.name.startsWith(prefix, ignoreCase = true) }
-        return Result.success(filteredCityList)
+        val loadResult = getCities()
+
+        return if (loadResult.isSuccess) {
+            val filteredCityList = _cachedCities!!.filter { it.name.startsWith(prefix, ignoreCase = true) }
+            Result.success(filteredCityList)
+        } else {
+            Result.failure(loadResult.exceptionOrNull() ?: Exception("Failed to load cities for search"))
+        }
     }
 }

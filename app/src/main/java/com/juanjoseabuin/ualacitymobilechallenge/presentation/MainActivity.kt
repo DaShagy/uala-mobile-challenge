@@ -16,13 +16,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
+import com.juanjoseabuin.ualacitymobilechallenge.data.utils.CityDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.utils.LocalCityDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.utils.ViewModelDelegate.viewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
+import kotlinx.serialization.json.Json
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var cityRepository: CityRepository
+    private lateinit var localDataSource: CityDataSource
 
     private val viewModel by viewModel<MainViewModel> {
         MainViewModel(cityRepository)
@@ -31,7 +35,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        cityRepository = CityRepositoryImpl(applicationContext)
+        localDataSource = LocalCityDataSource(
+            applicationContext,
+            Json { ignoreUnknownKeys = true}
+        )
+
+        cityRepository = CityRepositoryImpl(localDataSource)
 
         enableEdgeToEdge()
         setContent {
