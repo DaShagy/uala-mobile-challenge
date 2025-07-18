@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.data.utils
+package com.juanjoseabuin.ualacitymobilechallenge.data.source
 
 import android.content.Context
 import com.juanjoseabuin.ualacitymobilechallenge.R
@@ -10,14 +10,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.InputStreamReader
 
-class LocalCityDataSource(
+class LocalJsonCityDataSourceImpl(
     private val context: Context,
     private val json: Json
-) : CityDataSource {
+) : CityJsonDataSource {
 
     private var _cachedCities: List<City>? = null
-
-    // Mutex to protect access to _cachedCities, ensuring thread-safety during loading.
     private val cacheMutex = Mutex()
 
     override suspend fun getCities(): Result<List<City>> {
