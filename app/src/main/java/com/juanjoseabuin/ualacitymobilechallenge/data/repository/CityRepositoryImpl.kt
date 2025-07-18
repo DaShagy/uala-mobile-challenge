@@ -13,13 +13,19 @@ import java.io.InputStreamReader
 class CityRepositoryImpl(
     private val context: Context
 ): CityRepository {
+
+    private var cityList: List<City> = listOf()
+
     override suspend fun getCities(): Result<List<City>> {
+
+        if (cityList.isNotEmpty()) return Result.success(cityList)
+
         try {
             val inputStream = context.resources.openRawResource(R.raw.cities)
             val reader = InputStreamReader(inputStream)
 
             val cityListType = object : TypeToken<List<City>>() {}.type
-            val cityList: List<City> = Gson().fromJson<List<City>?>(reader, cityListType).sortedBy { it.name }
+            cityList = Gson().fromJson<List<City>?>(reader, cityListType).sortedBy { it.name }
 
             withContext(Dispatchers.IO) {
                 reader.close()
@@ -30,5 +36,10 @@ class CityRepositoryImpl(
             e.printStackTrace()
             return Result.failure(e)
         }
+    }
+
+    override suspend fun searchCities(prefix: String): Result<List<City>> {
+        val filteredCityList = cityList.filter { it.name.startsWith(prefix, ignoreCase = true) }
+        return Result.success(filteredCityList)
     }
 }
