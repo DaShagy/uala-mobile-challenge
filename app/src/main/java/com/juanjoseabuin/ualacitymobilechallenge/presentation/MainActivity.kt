@@ -25,49 +25,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.R
-import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDatabase
-import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityLocalDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.LocalJsonCityDataSourceImpl
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.RoomCityDataSourceImpl
-import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.utils.ViewModelDelegate.viewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
-import kotlinx.serialization.json.Json
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private lateinit var cityRepository: CityRepository
-    private lateinit var cityJsonDataSource: CityJsonDataSource
-    private lateinit var cityLocalDataSource: CityLocalDataSource
-    private lateinit var database: CityDatabase
-
-    private val viewModel by viewModel<MainViewModel> {
-        MainViewModel(cityRepository)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        database = CityDatabase.getDatabase(applicationContext)
-        val cityDao = database.cityDao()
-
-        cityJsonDataSource = LocalJsonCityDataSourceImpl(
-            applicationContext,
-            Json { ignoreUnknownKeys = true }
-        )
-        cityLocalDataSource = RoomCityDataSourceImpl(cityDao)
-
-        cityRepository = CityRepositoryImpl(
-            cityJsonDataSource = cityJsonDataSource,
-            cityLocalDataSource = cityLocalDataSource
-        )
-
         enableEdgeToEdge()
         setContent {
             UalaCityMobileChallengeTheme {
+                val viewModel: MainViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsState()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
