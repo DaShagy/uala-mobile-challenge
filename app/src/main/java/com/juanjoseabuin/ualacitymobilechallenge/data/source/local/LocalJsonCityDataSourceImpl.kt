@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.data.source
+package com.juanjoseabuin.ualacitymobilechallenge.data.source.local
 
 import android.content.Context
 import com.juanjoseabuin.ualacitymobilechallenge.R
