@@ -2,14 +2,15 @@ package com.juanjoseabuin.ualacitymobilechallenge.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -44,40 +45,64 @@ class MainViewModel(
 
         // --- Collect All Cities ---
         viewModelScope.launch {
-            repository.getCities().collect { cities ->
-                _uiState.value = _uiState.value.copy(
-                    allCities = cities,
-                    isLoading = false // Set loading to false once allCities are available
-                )
-            }
+            repository.getCities() // This emits Flow<List<City>>
+                .combine(_uiState) { cities, uiState -> // Combine with uiState to get togglingCityIds
+                    cities.map { city ->
+                        CityUiItem(
+                            city = city,
+                            isToggling = uiState.togglingCityIds.contains(city.id)
+                        )
+                    }
+                }
+                .collect { cityUiItems -> // Collect List<CityUiItem>
+                    _uiState.value = _uiState.value.copy(
+                        allCities = cityUiItems,
+                        isLoading = false // Set loading to false once allCities are available
+                    )
+                }
         }
 
         // --- Collect Favorite Cities ---
         viewModelScope.launch {
-            repository.getFavoriteCities().collect { favorites ->
-                _uiState.value = _uiState.value.copy(favoriteCities = favorites)
-            }
+            repository.getFavoriteCities() // This emits Flow<List<City>>
+                .combine(_uiState) { favorites, uiState -> // Combine with uiState
+                    favorites.map { city ->
+                        CityUiItem(
+                            city = city,
+                            isToggling = uiState.togglingCityIds.contains(city.id)
+                        )
+                    }
+                }
+                .collect { favoriteUiItems -> // Collect List<CityUiItem>
+                    _uiState.value = _uiState.value.copy(favoriteCities = favoriteUiItems)
+                }
         }
 
         // --- Immediate Search Query Update for UI ---
-        // This collector ensures that uiState.searchQuery always reflects the IMMEDIATE user input
         viewModelScope.launch {
-            _searchQuery.collectLatest { query -> // Use collectLatest to always get the very last emitted value
+            _searchQuery.collectLatest { query ->
                 _uiState.value = _uiState.value.copy(searchQuery = query)
             }
         }
 
         // --- Debounced Search for Repository Call ---
-        // This collector is for actually triggering the search operation on the repository
         viewModelScope.launch {
             _searchQuery
-                .debounce(300L) // Wait for user to stop typing
-                .distinctUntilChanged() // Only proceed if the debounced query has changed
+                .debounce(300L)
+                .distinctUntilChanged()
                 .flatMapLatest { query ->
-                    repository.searchCities(query) // Call repository with debounced query
+                    repository.searchCities(query) // This emits Flow<List<City>>
                 }
-                .collect { filteredCities ->
-                    _uiState.value = _uiState.value.copy(filteredCities = filteredCities)
+                .combine(_uiState) { filteredCities, uiState -> // Combine with uiState
+                    filteredCities.map { city ->
+                        CityUiItem(
+                            city = city,
+                            isToggling = uiState.togglingCityIds.contains(city.id)
+                        )
+                    }
+                }
+                .collect { filteredUiItems -> // Collect List<CityUiItem>
+                    _uiState.value = _uiState.value.copy(filteredCities = filteredUiItems)
                 }
         }
     }
@@ -89,46 +114,35 @@ class MainViewModel(
     fun toggleFavoriteStatus(cityId: Long) {
         viewModelScope.launch {
             val currentUiState = _uiState.value
-            val cityToToggle = currentUiState.allCities.find { it.id == cityId }
 
-            if (cityToToggle != null) {
-                val updatedCity = cityToToggle.copy(isFavorite = !cityToToggle.isFavorite)
+            _uiState.value = currentUiState.copy(
+                togglingCityIds = currentUiState.togglingCityIds + cityId
+            )
 
-                // Optimistically update the UI state immediately
-                _uiState.value = currentUiState.copy(
-                    // Update the city in all relevant lists in the UI state
-                    allCities = currentUiState.allCities.map { city ->
-                        if (city.id == cityId) updatedCity else city
-                    },
-                    filteredCities = currentUiState.filteredCities.map { city ->
-                        if (city.id == cityId) updatedCity else city
-                    },
-                    favoriteCities = if (updatedCity.isFavorite) {
-                        // Add to favorites and keep sorted
-                        (currentUiState.favoriteCities + updatedCity).sortedBy { it.name }
-                    } else {
-                        // Remove from favorites
-                        currentUiState.favoriteCities.filter { it.id != cityId }
-                    }
+            try {
+                repository.toggleFavoriteStatus(cityId)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Failed to toggle favorite status for ID $cityId: ${e.message}"
                 )
-
-                try {
-                    // Perform the actual database operation.
-                    repository.toggleFavoriteStatus(cityId)
-                } catch (e: Exception) {
-                    _uiState.value = currentUiState // Revert to the state before the optimistic update
-                    _uiState.value = _uiState.value.copy(error = "Failed to toggle favorite status: ${e.message}")
-                }
+                e.printStackTrace() // Log the error for debugging
+            } finally {
+                // Always remove the cityId from `togglingCityIds` when the operation finishes
+                // (whether successful or failed), clearing the loading indicator.
+                _uiState.value = _uiState.value.copy(
+                    togglingCityIds = _uiState.value.togglingCityIds - cityId
+                )
             }
         }
     }
 
     data class CitiesUiState(
-        val allCities: List<City> = emptyList(),
-        val filteredCities: List<City> = emptyList(),
-        val favoriteCities: List<City> = emptyList(),
+        val allCities: List<CityUiItem> = emptyList(),
+        val filteredCities: List<CityUiItem> = emptyList(),
+        val favoriteCities: List<CityUiItem> = emptyList(),
         val searchQuery: String = "",
         val isLoading: Boolean = true,
-        val error: String? = null
+        val error: String? = null,
+        val togglingCityIds: Set<Long> = emptySet()
     )
 }
