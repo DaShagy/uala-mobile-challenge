@@ -40,9 +40,9 @@ import kotlinx.serialization.json.Json
 class MainActivity : ComponentActivity() {
 
     private lateinit var cityRepository: CityRepository
-    private lateinit var cityJsonDataSource: CityJsonDataSource // Renamed from localDataSource
-    private lateinit var cityLocalDataSource: CityLocalDataSource// New Room data source
-    private lateinit var database: CityDatabase // Room database instance
+    private lateinit var cityJsonDataSource: CityJsonDataSource
+    private lateinit var cityLocalDataSource: CityLocalDataSource
+    private lateinit var database: CityDatabase
 
     private val viewModel by viewModel<MainViewModel> {
         MainViewModel(cityRepository)
@@ -122,7 +122,7 @@ class MainActivity : ComponentActivity() {
                                                 if (city.isFavorite) R.drawable.ic_heart_filled
                                                 else R.drawable.ic_heart_outlined
                                             ),
-                                            contentDescription = null // Consider providing a meaningful content description for accessibility
+                                            contentDescription = null
                                         )
                                     }
                                 }
