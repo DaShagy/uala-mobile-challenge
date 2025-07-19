@@ -1,8 +1,12 @@
 package com.juanjoseabuin.ualacitymobilechallenge.domain.repository
 
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
+import kotlinx.coroutines.flow.Flow
 
 interface CityRepository {
-    suspend fun getCities(): Result<List<City>>
-    suspend fun searchCities(prefix: String): Result<List<City>>
+    fun getCities(): Flow<List<City>>
+    fun searchCities(prefix: String): Flow<List<City>>
+    suspend fun toggleFavoriteStatus(cityId: Long)
+    fun getFavoriteCities(): Flow<List<City>>
+    suspend fun ensureDatabasePopulated()
 }
