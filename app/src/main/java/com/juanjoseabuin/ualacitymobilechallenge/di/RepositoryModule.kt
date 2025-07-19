@@ -1,12 +1,9 @@
 package com.juanjoseabuin.ualacitymobilechallenge.di
 
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityLocalDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import dagger.Binds
 import dagger.Module
-import dagger.Provides // Needed if there are other dependencies provided here
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
