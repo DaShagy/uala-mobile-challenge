@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,41 +31,39 @@ class MainViewModel @Inject constructor(
     private val repository: CityRepository
 ) : ViewModel() {
 
+    // Represents the entire UI state of the screen
     private val _uiState = MutableStateFlow(CitiesUiState())
     val uiState: StateFlow<CitiesUiState> = _uiState.asStateFlow()
 
+    // Holds the current search query entered by the user
     private val _searchQuery = MutableStateFlow("")
 
+    // Tracks cities for which a favorite toggle operation is currently in progress
     private val _togglingCityIds = MutableStateFlow<Set<Long>>(emptySet())
 
+    // Flow that provides a debounced and distinct list of cities based on the search query
     private val displayedCitiesFlow: Flow<List<CityUiItem>> = _searchQuery
-        .debounce(300.milliseconds)
-        .distinctUntilChanged()
-        .flatMapLatest { query ->
+        .debounce(300.milliseconds) // Wait for user to stop typing for 300ms
+        .distinctUntilChanged() // Emit only if the query truly changes
+        .flatMapLatest { query -> // Switch to a new search flow whenever the query changes
             repository.searchCities(query)
         }
-        .combine(_togglingCityIds) { cities, togglingIds ->
+        .map { cities ->
             cities.map { city ->
-                CityUiItem(
-                    city = city,
-                    isToggling = togglingIds.contains(city.id)
-                )
+                CityUiItem(city = city)
             }
         }
         .stateIn(
             scope = viewModelScope,
             initialValue = emptyList(),
+            // Start collecting when there's at least one collector, stop 5 seconds after last collector
             started = SharingStarted.WhileSubscribed(5000)
         )
 
+    // Flow that provides the current list of favorite cities
     private val favoriteCitiesFlow: Flow<List<CityUiItem>> = repository.getFavoriteCities()
-        .combine(_togglingCityIds) { favorites, togglingIds ->
-            favorites.map { city ->
-                CityUiItem(
-                    city = city,
-                    isToggling = togglingIds.contains(city.id)
-                )
-            }
+        .map { favorites ->
+            favorites.map { city -> CityUiItem(city = city) }
         }
         .stateIn(
             viewModelScope,
@@ -72,14 +71,17 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000)
         )
 
+    // Tracks the initial loading state of the application data
     private val initialLoadingFlow = MutableStateFlow(true)
+    // Holds any error message that occurred during data loading or operations
     private val errorFlow = MutableStateFlow<String?>(null)
 
     init {
+        // Launch a coroutine to ensure the database is populated on ViewModel initialization
         viewModelScope.launch {
             try {
                 initialLoadingFlow.value = true
-                errorFlow.value = null
+                errorFlow.value = null // Clear previous errors
                 repository.ensureDatabasePopulated()
             } catch (e: Exception) {
                 errorFlow.value = "Failed to initialize data: ${e.message}"
@@ -88,6 +90,8 @@ class MainViewModel @Inject constructor(
             }
         }
 
+        // Combines multiple data flows into a single UI state flow,
+        // which the UI observes for updates.
         combine(
             displayedCitiesFlow,
             favoriteCitiesFlow,
@@ -95,7 +99,7 @@ class MainViewModel @Inject constructor(
             initialLoadingFlow,
             errorFlow,
             _togglingCityIds
-        ) { args: Array<Any?> ->
+        ) { args: Array<Any?> -> // Destructure args array to individual state components
             val displayedCities = args[0] as List<CityUiItem>
             val favoriteCities = args[1] as List<CityUiItem>
             val searchQuery = args[2] as String
@@ -103,6 +107,7 @@ class MainViewModel @Inject constructor(
             val error = args[4] as String?
             val togglingIds = args[5] as Set<Long>
 
+            // Construct and return the new combined UI state
             CitiesUiState(
                 displayedCities = displayedCities,
                 favoriteCities = favoriteCities,
@@ -112,27 +117,39 @@ class MainViewModel @Inject constructor(
                 togglingCityIds = togglingIds
             )
         }.onEach { newState ->
+            // Update the main UI state only if it has actually changed
             if (newState != _uiState.value) {
                 _uiState.value = newState
             }
         }
             .catch { e ->
+                // Catch any exceptions in the combine/onEach flow and update UI with error
                 _uiState.value = _uiState.value.copy(
                     error = "An unexpected error occurred: ${e.message}",
                     isLoading = false
                 )
             }
-            .launchIn(viewModelScope)
+            .launchIn(viewModelScope) // Launch the collection of the combined flow within ViewModel's scope
     }
 
+    /**
+     * Updates the search query. This will trigger a new search operation in the repository.
+     * @param query The new search string.
+     */
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
 
+    /**
+     * Toggles the favorite status of a city.
+     * Updates the UI optimistically first, then performs the database operation in the background.
+     * @param cityId The ID of the city to toggle.
+     */
     fun toggleFavoriteStatus(cityId: Long) {
         viewModelScope.launch {
             val currentUiState = _uiState.value
 
+            // Optimistically add cityId to the toggling set to show a loading indicator on the UI
             _uiState.value = currentUiState.copy(
                 togglingCityIds = currentUiState.togglingCityIds + cityId
             )
@@ -140,10 +157,11 @@ class MainViewModel @Inject constructor(
             try {
                 repository.toggleFavoriteStatus(cityId)
             } catch (e: Exception) {
+                // If the operation fails, update the UI state with an error message
                 _uiState.value = _uiState.value.copy(
                     error = "Failed to toggle favorite status for ID $cityId: ${e.message}"
                 )
-                e.printStackTrace() // Log the error for debugging
+                // e.printStackTrace() // Removed: Redundant with errorFlow update for UI
             } finally {
                 // Always remove the cityId from `togglingCityIds` when the operation finishes
                 // (whether successful or failed), clearing the loading indicator.
@@ -154,6 +172,9 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Data class representing the complete UI state for the main screen.
+     */
     data class CitiesUiState(
         val displayedCities: List<CityUiItem> = emptyList(),
         val favoriteCities: List<CityUiItem> = emptyList(),
