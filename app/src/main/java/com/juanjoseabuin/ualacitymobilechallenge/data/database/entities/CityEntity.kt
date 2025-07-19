@@ -2,11 +2,19 @@ package com.juanjoseabuin.ualacitymobilechallenge.data.database.entities
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
 
-@Entity(tableName = "cities")
+@Entity(
+    tableName = "cities",
+    indices = [
+        Index(value = ["id"], unique = true),
+        Index(value = ["isFavorite"]),
+        Index(value = ["name"])
+    ]
+)
 data class CityEntity(
     @PrimaryKey
     val id: Long,
