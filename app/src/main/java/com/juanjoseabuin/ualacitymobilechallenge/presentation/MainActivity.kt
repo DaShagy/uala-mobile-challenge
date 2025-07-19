@@ -26,9 +26,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.juanjoseabuin.ualacitymobilechallenge.R
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDatabase
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityLocalDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.LocalJsonCityDataSourceImpl
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.RoomCityDataSourceImpl
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.utils.ViewModelDelegate.viewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
@@ -37,7 +40,9 @@ import kotlinx.serialization.json.Json
 class MainActivity : ComponentActivity() {
 
     private lateinit var cityRepository: CityRepository
-    private lateinit var localDataSource: CityJsonDataSource
+    private lateinit var cityJsonDataSource: CityJsonDataSource // Renamed from localDataSource
+    private lateinit var cityLocalDataSource: CityLocalDataSource// New Room data source
+    private lateinit var database: CityDatabase // Room database instance
 
     private val viewModel by viewModel<MainViewModel> {
         MainViewModel(cityRepository)
@@ -46,12 +51,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        localDataSource = LocalJsonCityDataSourceImpl(
-            applicationContext,
-            Json { ignoreUnknownKeys = true}
-        )
+        database = CityDatabase.getDatabase(applicationContext)
+        val cityDao = database.cityDao()
 
-        cityRepository = CityRepositoryImpl(localDataSource)
+        cityJsonDataSource = LocalJsonCityDataSourceImpl(
+            applicationContext,
+            Json { ignoreUnknownKeys = true }
+        )
+        cityLocalDataSource = RoomCityDataSourceImpl(cityDao)
+
+        cityRepository = CityRepositoryImpl(
+            cityJsonDataSource = cityJsonDataSource,
+            cityLocalDataSource = cityLocalDataSource
+        )
 
         enableEdgeToEdge()
         setContent {
@@ -64,8 +76,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         TextField (
                             modifier = Modifier.fillMaxWidth(),
-                            value = uiState.searchValue,
-                            onValueChange = { viewModel.handleAction(MainViewModel.MainUiAction.SearchCity(it)) }
+                            value = uiState.searchQuery,
+                            onValueChange = { viewModel.onSearchQueryChanged(it) }
                         )
 
                         if (uiState.isLoading) {
@@ -76,28 +88,41 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 CircularProgressIndicator()
                             }
+                        } else if (uiState.error != null) {
+                            // Display error message if any
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(text = "Error: ${uiState.error}")
+                            }
                         } else {
                             LazyColumn(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 items(
-                                    count = uiState.cities.size,
-                                    key = { uiState.cities[it].id }
-                                ) {
+                                    count = uiState.filteredCities.size,
+                                    key = { uiState.filteredCities[it].id }
+                                ) { index ->
+                                    val city = uiState.filteredCities[index]
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(text = uiState.cities[it].name)
+                                        Text(text = city.name)
                                         Icon(
-                                            modifier = Modifier.requiredSize(32.dp).clickable {
-                                                viewModel.handleAction(MainViewModel.MainUiAction.ToggleFavorite(uiState.cities[it].id))
-                                            },
+                                            modifier = Modifier
+                                                .requiredSize(32.dp)
+                                                .clickable {
+                                                    viewModel.toggleFavoriteStatus(city.id)
+                                                },
                                             imageVector = ImageVector.vectorResource(
-                                                if (uiState.cities[it].isFavorite) R.drawable.ic_heart_filled
+                                                if (city.isFavorite) R.drawable.ic_heart_filled
                                                 else R.drawable.ic_heart_outlined
                                             ),
-                                            contentDescription = null
+                                            contentDescription = null // Consider providing a meaningful content description for accessibility
                                         )
                                     }
                                 }
