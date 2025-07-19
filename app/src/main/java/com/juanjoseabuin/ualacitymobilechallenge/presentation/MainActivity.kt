@@ -61,7 +61,6 @@ class MainActivity : ComponentActivity() {
                                 CircularProgressIndicator()
                             }
                         } else if (uiState.error != null) {
-                            // Display error message if any
                             Column(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = Arrangement.Center,
@@ -73,11 +72,16 @@ class MainActivity : ComponentActivity() {
                             LazyColumn(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
+                                val displayedCities = uiState.displayedCities
+
                                 items(
-                                    count = uiState.displayedCities.size,
-                                    key = { uiState.displayedCities[it].city.id }
+                                    count = displayedCities.size,
+                                    key = { displayedCities[it].city.id }
                                 ) { index ->
-                                    val city = uiState.displayedCities[index].city
+                                    val cityItem = displayedCities[index]
+                                    val city = cityItem.city
+                                    val isToggling = uiState.togglingCityIds.contains(city.id)
+
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(8.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -87,7 +91,7 @@ class MainActivity : ComponentActivity() {
                                         Icon(
                                             modifier = Modifier
                                                 .requiredSize(32.dp)
-                                                .clickable {
+                                                .clickable(enabled = !isToggling) {
                                                     viewModel.toggleFavoriteStatus(city.id)
                                                 },
                                             imageVector = ImageVector.vectorResource(
