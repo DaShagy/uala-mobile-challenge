@@ -9,35 +9,87 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class CityRepositoryImpl @Inject constructor(
-    private val cityJsonDataSource: CityJsonDataSource, // For initial JSON load
-    private val cityLocalDataSource: CityLocalDataSource // For Room operations
+    private val cityJsonDataSource: CityJsonDataSource,
+    private val cityLocalDataSource: CityLocalDataSource
 ) : CityRepository {
 
-    // In-memory cache for all cities.
-    private val _allCitiesCache = MutableStateFlow<List<City>>(emptyList())
+    private val _allCitiesDbFlow = cityLocalDataSource.getAllCities()
+    private val _favoriteCitiesDbFlow = cityLocalDataSource.getFavoriteCities()
 
+    // Holds temporary optimistic updates for favorite status until confirmed by database
+    private val _optimisticFavoriteOverrides = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
+
+    // Cache for all cities, combining database truth with optimistic overrides
+    private val _allCitiesCache = MutableStateFlow<List<City>>(emptyList())
+    // Cache for favorite cities, combining database truth with optimistic overrides
+    private val _favoriteCitiesCache = MutableStateFlow<List<City>>(emptyList())
+
+    // Coroutine scope for long-running repository operations
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
-        // Collects all cities from the local data source to keep the in-memory cache synchronized with the database.
-        repositoryScope.launch {
-            cityLocalDataSource.getAllCities().collect { cities ->
-                _allCitiesCache.value = cities
+        // Combines the raw database flow of all cities with optimistic overrides.
+        // It produces a pair: the first element is the raw DB list, the second is the list with overrides applied.
+        _allCitiesDbFlow
+            .combine(_optimisticFavoriteOverrides) { dbCities, overrides ->
+                Pair(dbCities, dbCities.map { city ->
+                    val optimisticStatus = overrides[city.id]
+                    city.copy(isFavorite = optimisticStatus ?: city.isFavorite)
+                })
             }
-        }
+            .onEach { (dbCities, combinedCities) ->
+                _allCitiesCache.value = combinedCities
+
+                // Clean up optimistic overrides once the database has confirmed the status.
+                _optimisticFavoriteOverrides.update { currentOverrides ->
+                    currentOverrides.filter { (cityId, optimisticStatus) ->
+                        // Get the raw database status for this city from the `dbCities` list
+                        val rawDbCity = dbCities.firstOrNull { it.id == cityId }
+                        val rawDbStatus = rawDbCity?.isFavorite
+
+                        // KEEP the override if:
+                        // 1. The city is no longer in the raw DB list (edge case, but handled)
+                        // 2. OR the raw DB status does NOT match our optimistic status
+                        //    (meaning the DB hasn't propagated the change yet for this city).
+                        rawDbStatus == null || rawDbStatus != optimisticStatus
+                    }
+                }
+            }
+            .launchIn(repositoryScope)
+
+        // Combines the raw database flow of favorite cities with optimistic overrides.
+        // Cleanup of overrides for favorites is handled by the _allCitiesDbFlow logic.
+        _favoriteCitiesDbFlow
+            .combine(_optimisticFavoriteOverrides) { dbFavorites, overrides ->
+                dbFavorites.map { city ->
+                    val optimisticStatus = overrides[city.id]
+                    city.copy(isFavorite = optimisticStatus ?: city.isFavorite)
+                }
+            }
+            .onEach { combinedFavorites ->
+                _favoriteCitiesCache.value = combinedFavorites
+            }
+            .launchIn(repositoryScope)
     }
 
     override suspend fun ensureDatabasePopulated() {
-        if (cityLocalDataSource.getCityCount() == 0) {
+        val cityCount = cityLocalDataSource.getCityCount()
+
+        if (cityCount == 0) {
             val citiesResult = cityJsonDataSource.getCities()
             citiesResult.onSuccess { cities ->
                 cityLocalDataSource.insertCities(cities)
             }.onFailure { throwable ->
+                // Re-throw the exception to be handled by the caller (e.g., ViewModel)
                 throw throwable
             }
         }
@@ -54,20 +106,37 @@ class CityRepositoryImpl @Inject constructor(
             } else {
                 allCities.filter {
                     it.name.startsWith(prefix, ignoreCase = true)
-                }
+                }.sortedBy { it.name }
             }
         }
     }
 
     override suspend fun toggleFavoriteStatus(cityId: Long) {
-        val city = cityLocalDataSource.getCityById(cityId)
-        if (city != null) {
-            val updatedCity = city.copy(isFavorite = !city.isFavorite)
-            cityLocalDataSource.updateCity(updatedCity)
+        val cityToToggle = _allCitiesCache.value.firstOrNull { it.id == cityId }
+
+        if (cityToToggle != null) {
+            val updatedCity = cityToToggle.copy(isFavorite = !cityToToggle.isFavorite)
+
+            // Apply optimistic update immediately to the overrides map
+            _optimisticFavoriteOverrides.update { currentOverrides ->
+                currentOverrides + (cityId to updatedCity.isFavorite)
+            }
+
+            // Launch the database update in a background coroutine
+            repositoryScope.launch {
+                try {
+                    cityLocalDataSource.updateCity(updatedCity)
+                } catch (e: Exception) {
+                    // If DB update fails, revert the optimistic override
+                    _optimisticFavoriteOverrides.update { currentOverrides ->
+                        currentOverrides - cityId
+                    }
+                }
+            }
         }
     }
 
     override fun getFavoriteCities(): Flow<List<City>> {
-        return cityLocalDataSource.getFavoriteCities()
+        return _favoriteCitiesCache
     }
 }
