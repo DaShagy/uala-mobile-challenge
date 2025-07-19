@@ -7,16 +7,22 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
@@ -29,85 +35,94 @@ class MainViewModel @Inject constructor(
 
     private val _searchQuery = MutableStateFlow("")
 
-    init {
-        // --- Data Loading and Population ---
-        viewModelScope.launch {
-            try {
-                _uiState.value =
-                    _uiState.value.copy(isLoading = true) // Set loading to true initially
-                repository.ensureDatabasePopulated()
-                // isLoading will be set to false after initial population,
-                // and then data collection will populate the lists
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to initialize data: ${e.message}"
+    private val _togglingCityIds = MutableStateFlow<Set<Long>>(emptySet())
+
+    private val displayedCitiesFlow: Flow<List<CityUiItem>> = _searchQuery
+        .debounce(300.milliseconds)
+        .distinctUntilChanged()
+        .flatMapLatest { query ->
+            repository.searchCities(query)
+        }
+        .combine(_togglingCityIds) { cities, togglingIds ->
+            cities.map { city ->
+                CityUiItem(
+                    city = city,
+                    isToggling = togglingIds.contains(city.id)
                 )
             }
         }
+        .stateIn(
+            scope = viewModelScope,
+            initialValue = emptyList(),
+            started = SharingStarted.WhileSubscribed(5000)
+        )
 
-        // --- Collect All Cities ---
-        viewModelScope.launch {
-            repository.getCities() // This emits Flow<List<City>>
-                .combine(_uiState) { cities, uiState -> // Combine with uiState to get togglingCityIds
-                    cities.map { city ->
-                        CityUiItem(
-                            city = city,
-                            isToggling = uiState.togglingCityIds.contains(city.id)
-                        )
-                    }
-                }
-                .collect { cityUiItems -> // Collect List<CityUiItem>
-                    _uiState.value = _uiState.value.copy(
-                        allCities = cityUiItems,
-                        isLoading = false // Set loading to false once allCities are available
-                    )
-                }
+    private val favoriteCitiesFlow: Flow<List<CityUiItem>> = repository.getFavoriteCities()
+        .combine(_togglingCityIds) { favorites, togglingIds ->
+            favorites.map { city ->
+                CityUiItem(
+                    city = city,
+                    isToggling = togglingIds.contains(city.id)
+                )
+            }
         }
+        .stateIn(
+            viewModelScope,
+            initialValue = emptyList(),
+            started = SharingStarted.WhileSubscribed(5000)
+        )
 
-        // --- Collect Favorite Cities ---
-        viewModelScope.launch {
-            repository.getFavoriteCities() // This emits Flow<List<City>>
-                .combine(_uiState) { favorites, uiState -> // Combine with uiState
-                    favorites.map { city ->
-                        CityUiItem(
-                            city = city,
-                            isToggling = uiState.togglingCityIds.contains(city.id)
-                        )
-                    }
-                }
-                .collect { favoriteUiItems -> // Collect List<CityUiItem>
-                    _uiState.value = _uiState.value.copy(favoriteCities = favoriteUiItems)
-                }
-        }
+    private val initialLoadingFlow = MutableStateFlow(true)
+    private val errorFlow = MutableStateFlow<String?>(null)
 
-        // --- Immediate Search Query Update for UI ---
+    init {
         viewModelScope.launch {
-            _searchQuery.collectLatest { query ->
-                _uiState.value = _uiState.value.copy(searchQuery = query)
+            try {
+                initialLoadingFlow.value = true
+                errorFlow.value = null
+                repository.ensureDatabasePopulated()
+            } catch (e: Exception) {
+                errorFlow.value = "Failed to initialize data: ${e.message}"
+            } finally {
+                initialLoadingFlow.value = false
             }
         }
 
-        // --- Debounced Search for Repository Call ---
-        viewModelScope.launch {
-            _searchQuery
-                .debounce(300L)
-                .distinctUntilChanged()
-                .flatMapLatest { query ->
-                    repository.searchCities(query) // This emits Flow<List<City>>
-                }
-                .combine(_uiState) { filteredCities, uiState -> // Combine with uiState
-                    filteredCities.map { city ->
-                        CityUiItem(
-                            city = city,
-                            isToggling = uiState.togglingCityIds.contains(city.id)
-                        )
-                    }
-                }
-                .collect { filteredUiItems -> // Collect List<CityUiItem>
-                    _uiState.value = _uiState.value.copy(filteredCities = filteredUiItems)
-                }
+        combine(
+            displayedCitiesFlow,
+            favoriteCitiesFlow,
+            _searchQuery,
+            initialLoadingFlow,
+            errorFlow,
+            _togglingCityIds
+        ) { args: Array<Any?> ->
+            val displayedCities = args[0] as List<CityUiItem>
+            val favoriteCities = args[1] as List<CityUiItem>
+            val searchQuery = args[2] as String
+            val isLoading = args[3] as Boolean
+            val error = args[4] as String?
+            val togglingIds = args[5] as Set<Long>
+
+            CitiesUiState(
+                displayedCities = displayedCities,
+                favoriteCities = favoriteCities,
+                searchQuery = searchQuery,
+                isLoading = isLoading,
+                error = error,
+                togglingCityIds = togglingIds
+            )
+        }.onEach { newState ->
+            if (newState != _uiState.value) {
+                _uiState.value = newState
+            }
         }
+            .catch { e ->
+                _uiState.value = _uiState.value.copy(
+                    error = "An unexpected error occurred: ${e.message}",
+                    isLoading = false
+                )
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -140,8 +155,7 @@ class MainViewModel @Inject constructor(
     }
 
     data class CitiesUiState(
-        val allCities: List<CityUiItem> = emptyList(),
-        val filteredCities: List<CityUiItem> = emptyList(),
+        val displayedCities: List<CityUiItem> = emptyList(),
         val favoriteCities: List<CityUiItem> = emptyList(),
         val searchQuery: String = "",
         val isLoading: Boolean = true,
