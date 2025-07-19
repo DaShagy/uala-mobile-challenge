@@ -2,10 +2,10 @@ package com.juanjoseabuin.ualacitymobilechallenge.di
 
 import android.content.Context
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDao
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityLocalDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.LocalJsonCityDataSourceImpl
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.RoomCityDataSourceImpl
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityJsonDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityLocalDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.LocalJsonCityDataSourceImpl
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.RoomCityDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
