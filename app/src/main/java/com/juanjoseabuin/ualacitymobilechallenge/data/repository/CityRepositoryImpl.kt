@@ -2,7 +2,9 @@ package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityJsonDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityLocalDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.GoogleStaticMapsService
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
+import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +21,8 @@ import javax.inject.Inject
 
 class CityRepositoryImpl @Inject constructor(
     private val cityJsonDataSource: CityJsonDataSource,
-    private val cityLocalDataSource: CityLocalDataSource
+    private val cityLocalDataSource: CityLocalDataSource,
+    private val googleStaticMapsService: GoogleStaticMapsService
 ) : CityRepository {
 
     private val _allCitiesDbFlow = cityLocalDataSource.getAllCities()
@@ -138,5 +141,37 @@ class CityRepositoryImpl @Inject constructor(
 
     override fun getFavoriteCities(): Flow<List<City>> {
         return _favoriteCitiesCache
+    }
+
+
+    override suspend fun getStaticMapForCoordinates(
+        coordinates: Coordinates,
+        width: Int,
+        height: Int,
+        zoom: Int,
+        mapType: String
+    ): ByteArray? {
+        val center = "${coordinates.lat},${coordinates.lon}"
+        val size = "${width}x${height}"
+
+        val apiKey = "AIzaSyDx5dZbOepLOzB-4Kzc73YsIn4w6db1qno"
+
+        // Add a marker for the city location
+        val markers = "color:red|label:C|${coordinates.lat},${coordinates.lon}"
+
+        return try {
+            val responseBody = googleStaticMapsService.getStaticMap(
+                center = center,
+                zoom = zoom,
+                size = size,
+                maptype = mapType,
+                markers = markers,
+                key = apiKey
+            )
+            responseBody.bytes()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }
