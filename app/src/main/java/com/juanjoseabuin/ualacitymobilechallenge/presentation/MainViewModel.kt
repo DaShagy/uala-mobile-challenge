@@ -4,124 +4,131 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class MainViewModel(
-    private val cityRepository: CityRepository
+    private val repository: CityRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MainUiState())
-    val uiState: StateFlow<MainUiState> = _uiState
-        .onStart { loadCities() }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = MainUiState()
-        )
+    private val _uiState = MutableStateFlow(CitiesUiState())
+    val uiState: StateFlow<CitiesUiState> = _uiState.asStateFlow()
 
-    private val _searchPrefixInternal = MutableStateFlow("")
+    private val _searchQuery = MutableStateFlow("")
 
     init {
-        // Observe changes to searchValue with debounce
+        // --- Data Loading and Population ---
         viewModelScope.launch {
-            _searchPrefixInternal
-                .debounce(300L)
-                .distinctUntilChanged()
-                .collectLatest { prefix ->
-                    executeSearch(prefix)
+            try {
+                _uiState.value =
+                    _uiState.value.copy(isLoading = true) // Set loading to true initially
+                repository.ensureDatabasePopulated()
+                // isLoading will be set to false after initial population,
+                // and then data collection will populate the lists
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Failed to initialize data: ${e.message}"
+                )
+            }
+        }
+
+        // --- Collect All Cities ---
+        viewModelScope.launch {
+            repository.getCities().collect { cities ->
+                _uiState.value = _uiState.value.copy(
+                    allCities = cities,
+                    isLoading = false // Set loading to false once allCities are available
+                )
+            }
+        }
+
+        // --- Collect Favorite Cities ---
+        viewModelScope.launch {
+            repository.getFavoriteCities().collect { favorites ->
+                _uiState.value = _uiState.value.copy(favoriteCities = favorites)
+            }
+        }
+
+        // --- Immediate Search Query Update for UI ---
+        // This collector ensures that uiState.searchQuery always reflects the IMMEDIATE user input
+        viewModelScope.launch {
+            _searchQuery.collectLatest { query -> // Use collectLatest to always get the very last emitted value
+                _uiState.value = _uiState.value.copy(searchQuery = query)
+            }
+        }
+
+        // --- Debounced Search for Repository Call ---
+        // This collector is for actually triggering the search operation on the repository
+        viewModelScope.launch {
+            _searchQuery
+                .debounce(300L) // Wait for user to stop typing
+                .distinctUntilChanged() // Only proceed if the debounced query has changed
+                .flatMapLatest { query ->
+                    repository.searchCities(query) // Call repository with debounced query
+                }
+                .collect { filteredCities ->
+                    _uiState.value = _uiState.value.copy(filteredCities = filteredCities)
                 }
         }
     }
 
-    fun handleAction(action: MainUiAction) {
-        when (action) {
-            MainUiAction.LoadInitialCities -> loadCities()
-            is MainUiAction.SearchCity -> {
-                _uiState.update { it.copy(searchValue = action.prefix, error = null) }
-                _searchPrefixInternal.value = action.prefix
-            }
-            is MainUiAction.ToggleFavorite -> {
-                toggleFavoriteStatus(action.cityId)
-            }
-        }
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
     }
 
-    private fun loadCities() = viewModelScope.launch(Dispatchers.IO) {
-        // Set loading state
-        _uiState.update { it.copy(isLoading = true, error = null) }
+    fun toggleFavoriteStatus(cityId: Long) {
+        viewModelScope.launch {
+            val currentUiState = _uiState.value
+            val cityToToggle = currentUiState.allCities.find { it.id == cityId }
 
-        cityRepository.getCities().onSuccess { loadedCities ->
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    cities = loadedCities,
-                    error = null // Clear any previous errors
-                )
-            }
-        }.onFailure { throwable ->
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    cities = emptyList(),
-                    error = throwable.message ?: "Unknown error loading cities"
-                )
-            }
-        }
-    }
+            if (cityToToggle != null) {
+                val updatedCity = cityToToggle.copy(isFavorite = !cityToToggle.isFavorite)
 
-    private fun executeSearch(prefix: String) = viewModelScope.launch(Dispatchers.IO) {
-        cityRepository.searchCities(prefix).onSuccess { filteredCities ->
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    cities = filteredCities,
-                    error = null
+                // Optimistically update the UI state immediately
+                _uiState.value = currentUiState.copy(
+                    // Update the city in all relevant lists in the UI state
+                    allCities = currentUiState.allCities.map { city ->
+                        if (city.id == cityId) updatedCity else city
+                    },
+                    filteredCities = currentUiState.filteredCities.map { city ->
+                        if (city.id == cityId) updatedCity else city
+                    },
+                    favoriteCities = if (updatedCity.isFavorite) {
+                        // Add to favorites and keep sorted
+                        (currentUiState.favoriteCities + updatedCity).sortedBy { it.name }
+                    } else {
+                        // Remove from favorites
+                        currentUiState.favoriteCities.filter { it.id != cityId }
+                    }
                 )
-            }
-        }.onFailure { throwable ->
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    cities = emptyList(),
-                    error = throwable.message ?: "Unknown error searching cities"
-                )
-            }
-        }
-    }
 
-    private fun toggleFavoriteStatus(cityId: Long) {
-        _uiState.update { currentState ->
-            val updatedCities = currentState.cities.map { city ->
-                if (city.id == cityId) {
-                    city.copy(isFavorite = !city.isFavorite) // Toggle the boolean
-                } else {
-                    city
+                try {
+                    // Perform the actual database operation.
+                    repository.toggleFavoriteStatus(cityId)
+                } catch (e: Exception) {
+                    _uiState.value = currentUiState // Revert to the state before the optimistic update
+                    _uiState.value = _uiState.value.copy(error = "Failed to toggle favorite status: ${e.message}")
                 }
             }
-            currentState.copy(cities = updatedCities) // Update the state with the new list
         }
     }
 
-    data class MainUiState(
-        val isLoading: Boolean = false,
-        val cities: List<City> = emptyList(),
-        val searchValue: String = "",
+    data class CitiesUiState(
+        val allCities: List<City> = emptyList(),
+        val filteredCities: List<City> = emptyList(),
+        val favoriteCities: List<City> = emptyList(),
+        val searchQuery: String = "",
+        val isLoading: Boolean = true,
         val error: String? = null
     )
-
-    sealed class MainUiAction {
-        data object LoadInitialCities : MainUiAction()
-        data class SearchCity(val prefix: String) : MainUiAction()
-        data class ToggleFavorite(val cityId: Long) : MainUiAction()
-    }
 }
