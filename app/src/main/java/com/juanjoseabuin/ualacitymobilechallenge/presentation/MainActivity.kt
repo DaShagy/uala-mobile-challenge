@@ -103,9 +103,9 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 items(
                                     count = uiState.filteredCities.size,
-                                    key = { uiState.filteredCities[it].id }
+                                    key = { uiState.filteredCities[it].city.id }
                                 ) { index ->
-                                    val city = uiState.filteredCities[index]
+                                    val city = uiState.filteredCities[index].city
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(8.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
