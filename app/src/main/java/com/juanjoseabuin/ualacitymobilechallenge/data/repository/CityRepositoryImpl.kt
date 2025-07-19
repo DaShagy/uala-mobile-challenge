@@ -1,7 +1,7 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityLocalDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityJsonDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityLocalDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import kotlinx.coroutines.CoroutineScope

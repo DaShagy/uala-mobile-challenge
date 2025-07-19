@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.retrofit2.retrofit)
     implementation(libs.retrofit2.gson)
+    implementation(libs.okhttp.logging.interceptor)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization)

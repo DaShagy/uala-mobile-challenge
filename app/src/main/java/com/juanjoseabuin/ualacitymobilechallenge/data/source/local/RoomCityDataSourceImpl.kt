@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.data.source
+package com.juanjoseabuin.ualacitymobilechallenge.data.source.local
 
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDao
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.toDomain

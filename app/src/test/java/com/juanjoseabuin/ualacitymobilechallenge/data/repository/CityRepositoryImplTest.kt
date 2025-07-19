@@ -1,6 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.CityJsonDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityJsonDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.utils.TestUtils
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import io.mockk.coEvery

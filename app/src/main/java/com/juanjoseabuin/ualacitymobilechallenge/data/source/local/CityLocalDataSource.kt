@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.data.source
+package com.juanjoseabuin.ualacitymobilechallenge.data.source.local
 
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import kotlinx.coroutines.flow.Flow
