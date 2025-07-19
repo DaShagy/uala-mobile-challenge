@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,9 +16,11 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@HiltViewModel
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-class MainViewModel(
+class MainViewModel @Inject constructor(
     private val repository: CityRepository
 ) : ViewModel() {
 

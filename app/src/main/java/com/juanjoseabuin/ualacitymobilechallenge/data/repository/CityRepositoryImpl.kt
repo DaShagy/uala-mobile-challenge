@@ -11,8 +11,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class CityRepositoryImpl(
+class CityRepositoryImpl @Inject constructor(
     private val cityJsonDataSource: CityJsonDataSource, // For initial JSON load
     private val cityLocalDataSource: CityLocalDataSource // For Room operations
 ) : CityRepository {
