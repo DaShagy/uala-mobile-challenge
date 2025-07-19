@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.CityListScreen
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.StaticMapScreen
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -19,8 +20,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UalaCityMobileChallengeTheme {
-                CityListScreen(
+                /*CityListScreen(
                     modifier = Modifier.fillMaxSize()
+                )*/
+                StaticMapScreen(
+                    cityId = 3836873L // Tucuman
                 )
             }
         }
