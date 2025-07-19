@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.android.hilt)
 }
 
 android {
@@ -65,6 +66,10 @@ dependencies {
     implementation(libs.androidx.paging.runtime.ktx)
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.room.paging)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
