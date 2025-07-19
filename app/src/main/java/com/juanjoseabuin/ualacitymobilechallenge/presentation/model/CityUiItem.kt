@@ -4,5 +4,5 @@ import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 
 data class CityUiItem(
     val city: City,
-    val isToggling: Boolean = false // This is the UI-specific state
+    val isToggling: Boolean = false
 )
