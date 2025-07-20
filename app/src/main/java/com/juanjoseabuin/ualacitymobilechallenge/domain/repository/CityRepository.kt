@@ -25,4 +25,10 @@ interface CityRepository {
         zoom: Int,
         mapType: String
     ): ByteArray?
+
+    suspend fun getCityDetails(
+        id: Long,
+        name: String,
+        countryCode: String
+    ): City?
 }

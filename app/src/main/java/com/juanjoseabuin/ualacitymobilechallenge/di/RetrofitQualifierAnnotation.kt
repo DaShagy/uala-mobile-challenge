@@ -8,3 +8,7 @@ import javax.inject.Qualifier
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class GoogleStaticMapsRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ApiNinjasCityDetailsRetrofit

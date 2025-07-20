@@ -22,7 +22,9 @@ data class CityEntity(
     val name: String,
     @Embedded
     val coord: CoordEntity,
-    val isFavorite: Boolean
+    val isFavorite: Boolean,
+    val isCapital: Boolean? = null,
+    val population: Long? = null
 )
 
 data class CoordEntity(
@@ -36,7 +38,9 @@ fun CityEntity.toDomain(): City {
         country = this.country,
         name = this.name,
         coord = Coordinates(lon = this.coord.lon, lat = this.coord.lat),
-        isFavorite = this.isFavorite
+        isFavorite = this.isFavorite,
+        isCapital = isCapital,
+        population = population
     )
 }
 
