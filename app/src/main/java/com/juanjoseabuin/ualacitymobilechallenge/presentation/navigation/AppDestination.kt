@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 sealed interface AppDestination
 
 @Serializable
-object CityListDestination : AppDestination
+data object CityListDestination : AppDestination
 
 @Serializable
-data class StaticMapDestination(val cityId: Long) : AppDestination
+data object StaticMapDestination : AppDestination

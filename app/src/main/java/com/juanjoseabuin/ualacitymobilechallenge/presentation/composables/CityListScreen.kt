@@ -22,27 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.R
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.MainViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 
 @Composable
 fun CityListScreen(
-    modifier: Modifier = Modifier,
-    onCityClick: (CityUiItem) -> Unit = {}
-) {
-    CityListScreenRoot(
-        modifier = modifier,
-        onCityClick = onCityClick
-    )
-}
-
-@Composable
-private fun CityListScreenRoot(
-    modifier: Modifier = Modifier,
-    viewModel: MainViewModel = hiltViewModel(),
-    onCityClick: (CityUiItem) -> Unit = {}
+    viewModel: CityListViewModel,
+    onCityClick: (Long) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -91,8 +78,7 @@ private fun CityListScreenRoot(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
-                                .clickable { onCityClick(cityItem) }
-                            ,
+                                .clickable { onCityClick(city.id) },
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
