@@ -13,6 +13,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.CityListDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.StaticMapDestination
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityListScreen
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.StaticMapScreen
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.StaticMapViewModel
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -36,12 +38,15 @@ fun AdaptiveTwoPaneLayout(
     val cityListScreen: @Composable () -> Unit = {
         CityListScreen(
             viewModel = cityListViewModel,
-            onCityClick = { cityId ->
+            onCityCardClick = { cityId ->
                 staticMapViewModel.updateCityId(cityId = cityId)
                 // Internal navigation logic for portrait mode
                 if (isPortrait && currentBackStackEntry?.destination?.route == cityListRoute) {
                     navController.navigate(StaticMapDestination)
                 }
+            },
+            onCityDetailsButtonClick = {
+
             }
         )
     }
