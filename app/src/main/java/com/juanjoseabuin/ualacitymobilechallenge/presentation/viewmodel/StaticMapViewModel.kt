@@ -36,13 +36,14 @@ class StaticMapViewModel @Inject constructor(
     val uiState: StateFlow<StaticMapUiState> = _uiState.asStateFlow()
 
     init {
-        // --- Core Logic: Observe uiState.city to load the map ---
         uiState
             .map { it.city }
             .distinctUntilChanged()
             .onEach { city ->
                 if (city.id != -1L) {
-                    loadStaticMapForCurrentCity()
+                    if (uiState.value.mapImage == null) {
+                        loadStaticMapForCurrentCity()
+                    }
                 } else {
                     _uiState.update { it.copy(isLoading = false, error = null, mapImage = null) }
                 }
@@ -76,6 +77,7 @@ class StaticMapViewModel @Inject constructor(
                     val cityDomain = repository.getCityById(cityId)
                     if (cityDomain != null) {
                         _uiState.update { it.copy(city = cityDomain.toUiItem()) }
+                        loadStaticMapForCurrentCity()
                     } else {
                         _uiState.update { it.copy(city = CityUiItem(), error = "City with ID $cityId not found.") }
                     }

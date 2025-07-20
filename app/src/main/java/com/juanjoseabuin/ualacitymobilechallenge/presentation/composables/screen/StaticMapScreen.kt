@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables
+package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
@@ -18,7 +18,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -27,8 +26,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.StaticMapViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
