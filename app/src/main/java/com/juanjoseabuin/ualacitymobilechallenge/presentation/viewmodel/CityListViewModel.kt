@@ -145,6 +145,27 @@ class CityListViewModel @Inject constructor(
         }
     }
 
+    fun getCityDetails(city: CityUiItem) {
+        viewModelScope.launch {
+            with(city) {
+                try {
+                    repository.getCityDetails(
+                        id = id,
+                        name = name,
+                        countryCode = country
+                    )
+
+                } catch (e: Exception) {
+                    _uiState.update {
+                        it.copy(
+                            error = "Failed to fetch city details for $name (ID: $id): ${e.message}"
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     data class CityListUiState(
         val displayedCities: List<CityUiItem> = emptyList(),
         val favoriteCities: List<CityUiItem> = emptyList(),
