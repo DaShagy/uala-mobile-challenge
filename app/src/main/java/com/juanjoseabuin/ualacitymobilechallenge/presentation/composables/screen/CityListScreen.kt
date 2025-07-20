@@ -106,7 +106,10 @@ fun CityListScreen(
                             onFavoriteIconClick = {
                                 viewModel.toggleCityFavoriteStatus(it)
                             },
-                            onDetailsButtonClick = onCityDetailsButtonClick
+                            onDetailsButtonClick = {
+                                onCityDetailsButtonClick(it.id)
+                                viewModel.getCityDetails(it)
+                            }
                         )
                     }
                 }
@@ -120,7 +123,7 @@ private fun CityCard(
     city: CityUiItem,
     onCardClick: (Long) -> Unit,
     onFavoriteIconClick: (Long) -> Unit,
-    onDetailsButtonClick: (Long) -> Unit,
+    onDetailsButtonClick: (CityUiItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -166,7 +169,7 @@ private fun CityCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { onDetailsButtonClick(city.id) }
+                    onClick = { onDetailsButtonClick(city) }
                 ) {
                     Text("Details")
                 }

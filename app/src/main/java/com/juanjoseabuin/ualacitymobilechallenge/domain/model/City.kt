@@ -10,7 +10,9 @@ data class City(
     val country: String = "",
     val name: String = "",
     val coord: Coordinates = Coordinates(),
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val isCapital: Boolean? = null,
+    val population: Long? = null
 )
 
 @Serializable

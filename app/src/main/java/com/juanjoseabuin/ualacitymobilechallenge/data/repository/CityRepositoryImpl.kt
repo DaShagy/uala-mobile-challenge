@@ -1,13 +1,14 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityLocalDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.ApiNinjasCityDetailsService
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.GoogleStaticMapsService
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.response.toDomain
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.di.CityListDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 class CityRepositoryImpl @Inject constructor(
     private val cityLocalDataSource: CityLocalDataSource,
     private val googleStaticMapsService: GoogleStaticMapsService,
+    private val apiNinjasCityDetailsService: ApiNinjasCityDetailsService,
     @CityListDispatcher private val dispatcher: CoroutineDispatcher
 ) : CityRepository {
 
@@ -78,6 +80,38 @@ class CityRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+
+    override suspend fun getCityDetails(id: Long, name: String, countryCode: String): City? {
+        return withContext(dispatcher) {
+            try {
+
+                val apiKey = "PlOT9y16XszsT4aCWGmSVg==vuAS6CopNJJaq7Zj"
+
+                val existingLocalCity = cityLocalDataSource.getCityById(id)
+
+                val citiesResponse = apiNinjasCityDetailsService.getCityData(
+                    apiKey = apiKey,
+                    name = name,
+                    country = countryCode
+                )
+
+                val apiCityResponse = citiesResponse.firstOrNull()
+
+                if (apiCityResponse != null) {
+                    val updatedCity = apiCityResponse.toDomain(id, existingLocalCity?.isFavorite ?: false)
+                    cityLocalDataSource.updateCity(updatedCity)
+
+                    return@withContext updatedCity
+                } else {
+                    return@withContext existingLocalCity
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return@withContext null
+            }
         }
     }
 }
