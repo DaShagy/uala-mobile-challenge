@@ -6,15 +6,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class City(
     @SerialName("_id")
-    val id: Long,
-    val country: String,
-    val name: String,
-    val coord: Coordinates,
+    val id: Long = -1L,
+    val country: String = "",
+    val name: String = "",
+    val coord: Coordinates = Coordinates(),
     val isFavorite: Boolean = false
 )
 
 @Serializable
 data class Coordinates(
-    val lon: Double,
-    val lat: Double
+    val lon: Double = Double.NaN,
+    val lat: Double = Double.NaN
 )

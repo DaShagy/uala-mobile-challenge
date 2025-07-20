@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toUiItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -57,7 +58,7 @@ class CityListViewModel @Inject constructor(
             .distinctUntilChanged()
             .flatMapLatest { query ->
                 repository.searchCities(query)
-                    .map { cities -> cities.map { CityUiItem(it) } }
+                    .map { cities -> cities.map { it.toUiItem() } }
                     .catch { e ->
                         _uiState.update { it.copy(error = "Error fetching cities: ${e.message}") }
                         emit(emptyList())
@@ -70,7 +71,7 @@ class CityListViewModel @Inject constructor(
 
 
         repository.getFavoriteCities()
-            .map { favorites -> favorites.map { CityUiItem(it) } }
+            .map { favorites -> favorites.map { it.toUiItem() } }
             .catch { e ->
                 _uiState.update { it.copy(error = "Error fetching favorites: ${e.message}") }
                 emit(emptyList())
