@@ -25,16 +25,24 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.MainViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 
 @Composable
-fun CityListScreen(modifier: Modifier = Modifier) {
-    CityListScreenRoot(modifier = modifier)
+fun CityListScreen(
+    modifier: Modifier = Modifier,
+    onCityClick: (CityUiItem) -> Unit = {}
+) {
+    CityListScreenRoot(
+        modifier = modifier,
+        onCityClick = onCityClick
+    )
 }
 
 @Composable
 private fun CityListScreenRoot(
     modifier: Modifier = Modifier,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = hiltViewModel(),
+    onCityClick: (CityUiItem) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -80,7 +88,11 @@ private fun CityListScreenRoot(
                         val isToggling = uiState.togglingCityIds.contains(city.id)
 
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                                .clickable { onCityClick(cityItem) }
+                            ,
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {

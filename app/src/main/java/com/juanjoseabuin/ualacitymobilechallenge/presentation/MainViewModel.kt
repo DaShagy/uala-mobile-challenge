@@ -203,9 +203,9 @@ class MainViewModel @Inject constructor(
                     // You can customize width, height, zoom, mapType here if needed
                     val mapBytes = repository.getStaticMapForCoordinates(
                         coordinates = city.coord,
-                        width = 400, // Example size
-                        height = 200,
-                        zoom = 10 // Example zoom
+                        width = 640,
+                        height = 640,
+                        zoom = 11,
                     )
                     _mapImageBytes.value = mapBytes
                     if (mapBytes == null) {
