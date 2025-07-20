@@ -47,7 +47,7 @@ fun StaticMapScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Map for City ID: ${uiState.cityId}") },
+                title = { Text(uiState.city.name) },
                 navigationIcon = {
                     if (isPortrait) {
                         IconButton(onClick = onBack) {
@@ -69,7 +69,7 @@ fun StaticMapScreen(
             verticalArrangement = Arrangement.Center
         ) {
             when {
-                uiState.cityId == -1L -> {
+                uiState.city.id == -1L -> {
                     Text("Select a city to view its map.")
                 }
                 uiState.isLoading -> {

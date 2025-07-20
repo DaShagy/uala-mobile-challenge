@@ -68,10 +68,9 @@ fun CityListScreen(
 
                     items(
                         count = displayedCities.size,
-                        key = { displayedCities[it].city.id }
+                        key = { displayedCities[it].id }
                     ) { index ->
-                        val cityItem = displayedCities[index]
-                        val city = cityItem.city
+                        val city= displayedCities[index]
                         val isToggling = uiState.togglingCityIds.contains(city.id)
 
                         Row(

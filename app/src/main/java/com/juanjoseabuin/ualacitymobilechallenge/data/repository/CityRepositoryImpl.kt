@@ -102,6 +102,10 @@ class CityRepositoryImpl @Inject constructor(
         return _allCitiesCache
     }
 
+    override suspend fun getCityById(id: Long): City? {
+        return cityLocalDataSource.getCityById(id)
+    }
+
     override fun searchCities(prefix: String): Flow<List<City>> {
         return _allCitiesCache.map { allCities ->
             if (prefix.isBlank()) {

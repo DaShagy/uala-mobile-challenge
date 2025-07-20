@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface CityRepository {
     fun getCities(): Flow<List<City>>
+    suspend fun getCityById(id: Long): City?
     fun searchCities(prefix: String): Flow<List<City>>
     suspend fun toggleFavoriteStatus(cityId: Long)
     fun getFavoriteCities(): Flow<List<City>>
