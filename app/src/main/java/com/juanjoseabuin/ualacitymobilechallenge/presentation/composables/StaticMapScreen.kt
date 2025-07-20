@@ -27,30 +27,15 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.MainViewModel
-
-@Composable
-fun StaticMapScreen(
-    cityId: Long,
-    modifier: Modifier = Modifier,
-    onBack: () -> Unit = {}
-) {
-    StaticMapScreenRoot(
-        cityId = cityId,
-        modifier = modifier,
-        onBack = onBack
-    )
-}
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.StaticMapViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StaticMapScreenRoot(
-    cityId: Long,
+fun StaticMapScreen(
+    viewModel: StaticMapViewModel,
     modifier: Modifier = Modifier,
-    viewModel: MainViewModel = hiltViewModel(),
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -58,17 +43,11 @@ private fun StaticMapScreenRoot(
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    LaunchedEffect(cityId) {
-        viewModel.loadMapForCity(
-            cityId = cityId
-        )
-    }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Map for City ID: $cityId") }, // You might want a more descriptive title
+                title = { Text("Map for City ID: ${uiState.cityId}") },
                 navigationIcon = {
                     if (isPortrait) {
                         IconButton(onClick = onBack) {
@@ -90,19 +69,21 @@ private fun StaticMapScreenRoot(
             verticalArrangement = Arrangement.Center
         ) {
             when {
-                uiState.isMapLoading -> {
+                uiState.cityId == -1L -> {
+                    Text("Select a city to view its map.")
+                }
+                uiState.isLoading -> {
                     CircularProgressIndicator()
                     Text("Loading map...")
                 }
-                uiState.mapError != null -> {
-                    Text(text = "Map Error: ${uiState.mapError}")
+                uiState.error != null -> {
+                    Text(text = "Map Error: ${uiState.error}")
                 }
                 uiState.mapImage != null -> {
                     val imageBitmap: ImageBitmap? = uiState.mapImage?.let {
                         try {
                             BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
                         } catch (e: Exception) {
-                            // Log the error if image decoding fails
                             e.printStackTrace()
                             null
                         }
@@ -122,8 +103,7 @@ private fun StaticMapScreenRoot(
                     }
                 }
                 else -> {
-                    // Default state if nothing is loading, no error, and no image
-                    Text("Select a city to view its map.")
+                    Text("Map not available.")
                 }
             }
         }
