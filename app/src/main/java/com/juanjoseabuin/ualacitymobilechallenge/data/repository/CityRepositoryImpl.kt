@@ -50,10 +50,8 @@ class CityRepositoryImpl @Inject constructor(
             val updatedEntity = it.copy(isFavorite = !it.isFavorite) // Toggle status
             cityLocalDataSource.updateCity(updatedEntity) // Perform the actual database write
         } ?: run {
-            // Handle case where city is not found, or throw an exception
             throw IllegalArgumentException("City with ID $id not found in repository.")
         }
-        delay(3000) // This is a temporary delay for testing. You can adjust this value.
     }
 
     override suspend fun getStaticMapForCoordinates(

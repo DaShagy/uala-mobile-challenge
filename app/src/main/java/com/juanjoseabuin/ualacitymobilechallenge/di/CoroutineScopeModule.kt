@@ -14,7 +14,7 @@ import javax.inject.Singleton
 annotation class CityListDispatcher
 
 @Module
-@InstallIn(SingletonComponent::class) // Installs in SingletonComponent, meaning it lives as long as the application
+@InstallIn(SingletonComponent::class)
 object DispatcherModule {
 
     @Provides
