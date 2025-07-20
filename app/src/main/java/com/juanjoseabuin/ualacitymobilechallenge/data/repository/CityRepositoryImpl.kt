@@ -1,152 +1,60 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.repository
 
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityJsonDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityLocalDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.GoogleStaticMapsService
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import com.juanjoseabuin.ualacitymobilechallenge.di.CityListDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class CityRepositoryImpl @Inject constructor(
-    private val cityJsonDataSource: CityJsonDataSource,
     private val cityLocalDataSource: CityLocalDataSource,
-    private val googleStaticMapsService: GoogleStaticMapsService
+    private val googleStaticMapsService: GoogleStaticMapsService,
+    @CityListDispatcher private val dispatcher: CoroutineDispatcher
 ) : CityRepository {
 
-    private val _allCitiesDbFlow = cityLocalDataSource.getAllCities()
-    private val _favoriteCitiesDbFlow = cityLocalDataSource.getFavoriteCities()
-
-    // Holds temporary optimistic updates for favorite status until confirmed by database
-    private val _optimisticFavoriteOverrides = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
-
-    // Cache for all cities, combining database truth with optimistic overrides
-    private val _allCitiesCache = MutableStateFlow<List<City>>(emptyList())
-    // Cache for favorite cities, combining database truth with optimistic overrides
-    private val _favoriteCitiesCache = MutableStateFlow<List<City>>(emptyList())
-
-    // Coroutine scope for long-running repository operations
-    private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    init {
-        // Combines the raw database flow of all cities with optimistic overrides.
-        // It produces a pair: the first element is the raw DB list, the second is the list with overrides applied.
-        _allCitiesDbFlow
-            .combine(_optimisticFavoriteOverrides) { dbCities, overrides ->
-                Pair(dbCities, dbCities.map { city ->
-                    val optimisticStatus = overrides[city.id]
-                    city.copy(isFavorite = optimisticStatus ?: city.isFavorite)
-                })
-            }
-            .onEach { (dbCities, combinedCities) ->
-                _allCitiesCache.value = combinedCities
-
-                // Clean up optimistic overrides once the database has confirmed the status.
-                _optimisticFavoriteOverrides.update { currentOverrides ->
-                    currentOverrides.filter { (cityId, optimisticStatus) ->
-                        // Get the raw database status for this city from the `dbCities` list
-                        val rawDbCity = dbCities.firstOrNull { it.id == cityId }
-                        val rawDbStatus = rawDbCity?.isFavorite
-
-                        // KEEP the override if:
-                        // 1. The city is no longer in the raw DB list (edge case, but handled)
-                        // 2. OR the raw DB status does NOT match our optimistic status
-                        //    (meaning the DB hasn't propagated the change yet for this city).
-                        rawDbStatus == null || rawDbStatus != optimisticStatus
-                    }
-                }
-            }
-            .launchIn(repositoryScope)
-
-        // Combines the raw database flow of favorite cities with optimistic overrides.
-        // Cleanup of overrides for favorites is handled by the _allCitiesDbFlow logic.
-        _favoriteCitiesDbFlow
-            .combine(_optimisticFavoriteOverrides) { dbFavorites, overrides ->
-                dbFavorites.map { city ->
-                    val optimisticStatus = overrides[city.id]
-                    city.copy(isFavorite = optimisticStatus ?: city.isFavorite)
-                }
-            }
-            .onEach { combinedFavorites ->
-                _favoriteCitiesCache.value = combinedFavorites
-            }
-            .launchIn(repositoryScope)
+    override suspend fun isCityDatabaseEmpty(): Boolean {
+        return withContext(dispatcher) {
+            cityLocalDataSource.getCityCount() == 0
+        }
     }
 
-    override suspend fun ensureDatabasePopulated() {
-        val cityCount = cityLocalDataSource.getCityCount()
-
-        if (cityCount == 0) {
-            val citiesResult = cityJsonDataSource.getCities()
-            citiesResult.onSuccess { cities ->
-                cityLocalDataSource.insertCities(cities)
-            }.onFailure { throwable ->
-                // Re-throw the exception to be handled by the caller (e.g., ViewModel)
-                throw throwable
-            }
+    override suspend fun importCitiesIntoDatabase(cities: List<City>) {
+        return withContext(dispatcher) {
+            cityLocalDataSource.insertCities(cities)
         }
     }
 
     override fun getCities(): Flow<List<City>> {
-        return _allCitiesCache
+        return cityLocalDataSource.getAllCities()
+    }
+
+    override fun getFavoriteCities(): Flow<List<City>> {
+        return cityLocalDataSource.getFavoriteCities()
     }
 
     override suspend fun getCityById(id: Long): City? {
         return cityLocalDataSource.getCityById(id)
     }
 
-    override fun searchCities(prefix: String): Flow<List<City>> {
-        return _allCitiesCache.map { allCities ->
-            if (prefix.isBlank()) {
-                allCities
-            } else {
-                allCities.filter {
-                    it.name.startsWith(prefix, ignoreCase = true)
-                }.sortedBy { it.name }
-            }
+    override suspend fun toggleCityFavoriteStatusById(id: Long) {
+        val cityEntity = cityLocalDataSource.getCityById(id) // Fetch the current city from DB
+        cityEntity?.let {
+            val updatedEntity = it.copy(isFavorite = !it.isFavorite) // Toggle status
+            cityLocalDataSource.updateCity(updatedEntity) // Perform the actual database write
+        } ?: run {
+            // Handle case where city is not found, or throw an exception
+            throw IllegalArgumentException("City with ID $id not found in repository.")
         }
+        delay(3000) // This is a temporary delay for testing. You can adjust this value.
     }
-
-    override suspend fun toggleFavoriteStatus(cityId: Long) {
-        val cityToToggle = _allCitiesCache.value.firstOrNull { it.id == cityId }
-
-        if (cityToToggle != null) {
-            val updatedCity = cityToToggle.copy(isFavorite = !cityToToggle.isFavorite)
-
-            // Apply optimistic update immediately to the overrides map
-            _optimisticFavoriteOverrides.update { currentOverrides ->
-                currentOverrides + (cityId to updatedCity.isFavorite)
-            }
-
-            // Launch the database update in a background coroutine
-            repositoryScope.launch {
-                try {
-                    cityLocalDataSource.updateCity(updatedCity)
-                } catch (e: Exception) {
-                    // If DB update fails, revert the optimistic override
-                    _optimisticFavoriteOverrides.update { currentOverrides ->
-                        currentOverrides - cityId
-                    }
-                }
-            }
-        }
-    }
-
-    override fun getFavoriteCities(): Flow<List<City>> {
-        return _favoriteCitiesCache
-    }
-
 
     override suspend fun getStaticMapForCoordinates(
         coordinates: Coordinates,
