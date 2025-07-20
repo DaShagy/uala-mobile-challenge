@@ -5,18 +5,24 @@ import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
 import kotlinx.coroutines.flow.Flow
 
 interface CityRepository {
+
+    suspend fun isCityDatabaseEmpty(): Boolean
+
+    suspend fun importCitiesIntoDatabase(cities: List<City>)
+
     fun getCities(): Flow<List<City>>
-    suspend fun getCityById(id: Long): City?
-    fun searchCities(prefix: String): Flow<List<City>>
-    suspend fun toggleFavoriteStatus(cityId: Long)
+
     fun getFavoriteCities(): Flow<List<City>>
-    suspend fun ensureDatabasePopulated()
+
+    suspend fun getCityById(id: Long): City?
+
+    suspend fun toggleCityFavoriteStatusById(id: Long)
 
     suspend fun getStaticMapForCoordinates(
         coordinates: Coordinates,
         width: Int,
         height: Int,
-        zoom: Int = 12,
-        mapType: String = "roadmap"
+        zoom: Int,
+        mapType: String
     ): ByteArray?
 }
