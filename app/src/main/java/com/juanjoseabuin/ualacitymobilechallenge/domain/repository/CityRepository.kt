@@ -13,9 +13,9 @@ interface CityRepository {
 
     suspend fun getStaticMapForCoordinates(
         coordinates: Coordinates,
-        width: Int = 600, // Default width
-        height: Int = 300, // Default height
-        zoom: Int = 14, // Default zoom level
-        mapType: String = "roadmap" // Default map type
+        width: Int,
+        height: Int,
+        zoom: Int = 12,
+        mapType: String = "roadmap"
     ): ByteArray?
 }
