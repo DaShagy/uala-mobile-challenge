@@ -1,5 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables
 
+import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.MainViewModel
@@ -32,9 +35,14 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.MainViewModel
 @Composable
 fun StaticMapScreen(
     cityId: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBack: () -> Unit = {}
 ) {
-    StaticMapScreenRoot(cityId = cityId, modifier = modifier)
+    StaticMapScreenRoot(
+        cityId = cityId,
+        modifier = modifier,
+        onBack = onBack
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,12 +50,18 @@ fun StaticMapScreen(
 private fun StaticMapScreenRoot(
     cityId: Long,
     modifier: Modifier = Modifier,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = hiltViewModel(),
+    onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val configuration = LocalConfiguration.current
+    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+
     LaunchedEffect(cityId) {
-        viewModel.loadMapForCity(cityId)
+        viewModel.loadMapForCity(
+            cityId = cityId
+        )
     }
 
     Scaffold(
@@ -56,16 +70,13 @@ private fun StaticMapScreenRoot(
             TopAppBar(
                 title = { Text("Map for City ID: $cityId") }, // You might want a more descriptive title
                 navigationIcon = {
-                    IconButton(onClick = {
-                        // For now, re-trigger map load.
-                        // In a real app, this would be `onBackClicked()` or similar
-                        // to navigate back.
-                        viewModel.loadMapForCity(cityId)
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
+                    if (isPortrait) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
                     }
                 }
             )
@@ -102,9 +113,9 @@ private fun StaticMapScreenRoot(
                             bitmap = imageBitmap,
                             contentDescription = "Static Map for City",
                             modifier = Modifier
-                                .fillMaxWidth() // Fill width of parent
-                                .weight(1f), // Take available height
-                            contentScale = ContentScale.Fit // Scale the image to fit
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentScale = ContentScale.Crop,
                         )
                     } else {
                         Text("Failed to display map image.")
