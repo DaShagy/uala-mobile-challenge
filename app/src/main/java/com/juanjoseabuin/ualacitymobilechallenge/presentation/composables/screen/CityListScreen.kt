@@ -1,6 +1,5 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,32 +11,40 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,31 +60,70 @@ fun CityListScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
-                    val title = if (uiState.isFilteringByFavorites) "Favorite Cities" else "All Cities"
+                    val title =
+                        if (uiState.isFilteringByFavorites) "Favorite Cities" else "All Cities"
                     Text(text = title)
                 },
                 actions = {
                     IconButton(onClick = { viewModel.onToggleFilteringByFavorites() }) {
                         Icon(
-                            imageVector = Icons.Default.List,
-                            contentDescription = "Top app bar action",
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Toggle filtering by favorites",
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = DarkBlue,
+                    titleContentColor = DesertWhite,
+                    actionIconContentColor = DesertWhite
+                )
             )
-        }
+        },
+        containerColor = DarkBlue,
+        contentColor = DesertWhite,
     ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(
+                start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr) + 16.dp,
+                end = innerPadding.calculateRightPadding(LayoutDirection.Ltr) + 16.dp,
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding()
+            )
         ) {
-            TextField(
-                modifier = Modifier.fillMaxWidth(),
+            OutlinedTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.onSearchQueryChanged(it) },
-                placeholder = { Text("Search cities...") }
+                placeholder = { Text("Search cities...") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search icon",
+                        tint = DarkBlue
+                    )
+                },
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = DarkBlue,
+                    unfocusedTextColor = DarkBlue,
+                    focusedContainerColor = DesertWhite,
+                    unfocusedContainerColor = DesertWhite,
+                    cursorColor = DarkBlue,
+                    focusedLeadingIconColor = DarkBlue,
+                    unfocusedLeadingIconColor = DarkBlue,
+                    focusedTrailingIconColor = DarkBlue,
+                    unfocusedTrailingIconColor = DarkBlue,
+                    focusedLabelColor = DarkBlue,
+                    unfocusedLabelColor = DarkBlue.copy(alpha = 0.7f),
+                    focusedPlaceholderColor = DarkBlue.copy(alpha = 0.5f),
+                    unfocusedPlaceholderColor = DarkBlue.copy(alpha = 0.5f),
+                )
             )
 
             if (uiState.isLoading || (uiState.displayedCities.isEmpty() && uiState.searchQuery.isBlank())) {
@@ -117,7 +163,7 @@ fun CityListScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     val displayedCities =
@@ -159,35 +205,56 @@ private fun CityCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        onClick = { onCardClick(city.id) }
+        onClick = { onCardClick(city.id) },
+        colors = CardColors(
+            containerColor = DesertWhite,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            IconButton(
+                onClick = { onFavoriteIconClick(city.id) }
+            ) {
                 Icon(
-                    modifier = Modifier.requiredSize(24.dp).clickable { onFavoriteIconClick(city.id) },
+                    modifier = Modifier
+                        .requiredSize(24.dp),
                     imageVector = ImageVector.vectorResource(if (city.isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
                     contentDescription = "Favorite"
                 )
+            }
 
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "${city.name}, ${city.country}",
-                    fontSize = 18.sp,
                     modifier = Modifier.padding(bottom = 4.dp),
+                    text = city.name,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Lat: ${city.coord.lat}, Lon: ${city.coord.lon}",
+                    text = "Lat: ${city.coord.lat}",
                     fontSize = 12.sp,
-                    color = Color.Gray,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkBlue.copy(alpha = 0.65f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Lon: ${city.coord.lon}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkBlue.copy(alpha = 0.65f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
