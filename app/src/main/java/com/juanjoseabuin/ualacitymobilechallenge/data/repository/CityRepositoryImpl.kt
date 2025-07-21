@@ -92,41 +92,54 @@ class CityRepositoryImpl @Inject constructor(
     }
 
     private suspend fun getAndProcessCity(cityId: Long): City? {
-        var city: City? = cityLocalDataSource.getCityById(cityId)
+        var cityDb: City? = cityLocalDataSource.getCityById(cityId)
 
         val apikey = "PlOT9y16XszsT4aCWGmSVg==vuAS6CopNJJaq7Zj"
 
-        if (city?.isUpdated == false) {
+        if (cityDb?.isUpdated == null || !cityDb.isUpdated) {
             try {
-                apiNinjasService.getCityData(
+                val citiesRemote = apiNinjasService.getCityData(
                     apiKey = apikey,
-                    name = city.name,
-                    country = city.country,
-                    minLat = city.coord.lat - 0.1,
-                    maxLat = city.coord.lat + 0.1,
-                    minLon = city.coord.lon - 0.1,
-                    maxLon = city.coord.lon + 0.1
-                ).firstOrNull()?.toDomain(cityId, city.isFavorite)?.let{
+                    name = cityDb?.name,
+                    country = cityDb?.country,
+                    minLat = cityDb?.coord?.lat?.minus(0.1),
+                    maxLat = cityDb?.coord?.lat?.plus(0.1),
+                    minLon = cityDb?.coord?.lon?.minus(0.1),
+                    maxLon = cityDb?.coord?.lon?.plus(0.1)
+                )
+                val cityRemote = citiesRemote.firstOrNull()
+
+                cityRemote?.toDomain(cityId, cityDb?.isFavorite ?: false)?.let{
                     cityLocalDataSource.updateCity(it.copy(isUpdated = true))
-                    city = cityLocalDataSource.getCityById(cityId)
+                    cityDb = cityLocalDataSource.getCityById(cityId)
                 }
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 println("Error fetching remote city details for cityId $cityId: ${e.message}")
             }
         }
-        return city
+        return cityDb
     }
 
     private suspend fun processCountry(countryCode: String?) {
         if (countryCode.isNullOrEmpty()) return
         val apikey = "PlOT9y16XszsT4aCWGmSVg==vuAS6CopNJJaq7Zj"
 
-        if (countryLocalDataSource.getCountryByCode(countryCode) == null) {
+        val countryDb = countryLocalDataSource.getCountryByCode(countryCode)
+        if (countryDb == null || !countryDb.isUpdated) {
             try {
                 val country = apiNinjasService.getCountryData(apikey, countryCode).firstOrNull()
+                val countryFlagUrl = apiNinjasService.getCountryFlag(apikey, countryCode)
                 country?.let {
-                    countryLocalDataSource.insertCountry(it.toDomain())
+                    countryLocalDataSource.insertCountry(
+                        it.toDomain()
+                            .copy(
+                                squareFlagUrl = countryFlagUrl.squareImageUrl,
+                                rectangleFlagUrl = countryFlagUrl.rectangleImageUrl,
+                                isUpdated = true
+                            )
+                    )
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

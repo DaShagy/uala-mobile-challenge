@@ -2,6 +2,7 @@ package com.juanjoseabuin.ualacitymobilechallenge.data.source.remote
 
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.response.CityApiResponse
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.response.CountryApiResponse
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.response.CountryFlagApiResponse
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
@@ -24,4 +25,10 @@ interface ApiNinjasService {
         @Header("X-Api-Key") apiKey: String,
         @Query("name") name: String
     ): List<CountryApiResponse>
+
+    @GET("v1/countryflag")
+    suspend fun getCountryFlag(
+        @Header("X-Api-Key") apiKey: String,
+        @Query("country") country: String
+    ): CountryFlagApiResponse
 }
