@@ -98,6 +98,16 @@ class CityListViewModel @Inject constructor(
                     } ?: fav
                 }.filter { it.isFavorite } // Ensure only favorites are in this list
             }
+            .combine(_uiState.map { it.searchQuery }) { combinedCities, searchQuery ->
+                // Then apply search filtering
+                if (searchQuery.isBlank()) {
+                    combinedCities
+                } else {
+                    combinedCities.filter { it.name.startsWith(searchQuery, ignoreCase = true) }
+                }
+            }
+            .debounce(300.milliseconds)
+            .distinctUntilChanged()
             .catch { e ->
                 _uiState.update { it.copy(error = "Error fetching favorites: ${e.message}") }
                 emit(emptyList())
@@ -111,6 +121,10 @@ class CityListViewModel @Inject constructor(
     fun onSearchQueryChanged(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
         savedStateHandle[SEARCH_QUERY_KEY] = query
+    }
+
+    fun onToggleFilteringByFavorites() {
+        _uiState.update { it.copy(isFilteringByFavorites = !uiState.value.isFilteringByFavorites) }
     }
 
     fun toggleCityFavoriteStatus(cityId: Long) {
@@ -153,6 +167,7 @@ class CityListViewModel @Inject constructor(
         val error: String? = null,
         val noResultsFound: Boolean = false,
         val togglingCityIds: Set<Long> = emptySet(),
+        val isFilteringByFavorites: Boolean = false,
     )
 
     companion object {
