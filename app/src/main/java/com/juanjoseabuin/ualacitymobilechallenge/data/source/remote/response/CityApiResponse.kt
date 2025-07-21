@@ -11,7 +11,8 @@ data class CityApiResponse(
     @SerializedName("country") val country: String, // ISO-3166 alpha-2 code
     @SerializedName("population") val population: Long?, // Population might be optional
     @SerializedName("is_capital") val isCapital: Boolean?, // Whether it's a capital city
-    @SerializedName("state") val state: String? // State/Region name
+    @SerializedName("state") val state: String?,
+    @SerializedName("region") val region: String?
 )
 
 fun CityApiResponse.toDomain(id: Long, isFavorite: Boolean): City {
@@ -19,9 +20,10 @@ fun CityApiResponse.toDomain(id: Long, isFavorite: Boolean): City {
         id = id,
         name = this.name,
         country = this.country,
-        coord = Coordinates(lon = this.longitude, lat = this.latitude), // Note: API often uses lon, lat order
+        coord = Coordinates(lon = this.longitude, lat = this.latitude),
         isFavorite = isFavorite,
         isCapital = this.isCapital,
-        population = this.population
+        population = this.population,
+        region = this.region
     )
 }

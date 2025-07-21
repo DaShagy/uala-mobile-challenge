@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.data.database
+package com.juanjoseabuin.ualacitymobilechallenge.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert

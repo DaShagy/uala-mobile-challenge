@@ -1,6 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.di
 
-import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.ApiNinjasCityDetailsService
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.ApiNinjasService
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.GoogleStaticMapsService
 import dagger.Module
 import dagger.Provides
@@ -18,7 +18,7 @@ object NetworkModule {
 
     // Base URL for Google Static Maps API
     private const val BASE_STATIC_MAPS_URL = "https://maps.googleapis.com/maps/api/"
-    private const val BASE_CITY_DETAILS_URL = "https://api.api-ninjas.com/"
+    private const val BASE_API_NINJAS_URL = "https://api.api-ninjas.com/"
 
     @Provides
     @Singleton
@@ -31,7 +31,7 @@ object NetworkModule {
     @Provides
     @Singleton
     @GoogleStaticMapsRetrofit
-    fun provideStaticMapsRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideGoogleStaticMapsRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_STATIC_MAPS_URL)
             .client(okHttpClient)
@@ -40,10 +40,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @ApiNinjasCityDetailsRetrofit
-    fun provideCityDetailsRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @ApiNinjasRetrofit
+    fun provideApiNinjasRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_CITY_DETAILS_URL)
+            .baseUrl(BASE_API_NINJAS_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -57,7 +57,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideCityDetailsService(@ApiNinjasCityDetailsRetrofit retrofit: Retrofit): ApiNinjasCityDetailsService {
-        return retrofit.create(ApiNinjasCityDetailsService::class.java)
+    fun provideApiNinjasService(@ApiNinjasRetrofit retrofit: Retrofit): ApiNinjasService {
+        return retrofit.create(ApiNinjasService::class.java)
     }
 }

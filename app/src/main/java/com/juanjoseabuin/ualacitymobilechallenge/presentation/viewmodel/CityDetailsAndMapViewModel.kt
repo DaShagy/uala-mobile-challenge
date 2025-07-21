@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
+import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CountryRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CountryUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toDomain
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toUiItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +23,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CityDetailsAndMapViewModel @Inject constructor(
-    private val repository: CityRepository,
+    private val cityRepository: CityRepository,
+    private val countryRepository: CountryRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -30,6 +33,7 @@ class CityDetailsAndMapViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(
         CityDetailsUiState(
             city = CityUiItem(), // Default "no city selected" state
+            country = CountryUiItem(),
             isLoading = false
         )
     )
@@ -54,9 +58,13 @@ class CityDetailsAndMapViewModel @Inject constructor(
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
                 try {
-                    val cityDomain = repository.getCityById(initialCityId)
+                    val cityDomain = cityRepository.getCityById(initialCityId)
                     if (cityDomain != null) {
-                        _uiState.update { it.copy(city = cityDomain.toUiItem()) }
+                        val countryDomain = countryRepository.getCountry(cityDomain.country)
+                        _uiState.update { it.copy(
+                            city = cityDomain.toUiItem(),
+                            country = countryDomain?.toUiItem() ?: CountryUiItem()
+                        ) }
                     } else {
                         _uiState.update { it.copy(city = CityUiItem(), error = "Saved city not found.") }
                     }
@@ -74,9 +82,13 @@ class CityDetailsAndMapViewModel @Inject constructor(
             if (cityId != -1L) {
                 _uiState.update { it.copy(isLoading = true, error = null) }
                 try {
-                    val cityDomain = repository.getCityById(cityId)
+                    val cityDomain = cityRepository.getCityById(cityId)
                     if (cityDomain != null) {
-                        _uiState.update { it.copy(city = cityDomain.toUiItem()) }
+                        val countryDomain = countryRepository.getCountry(cityDomain.country)
+                        _uiState.update { it.copy(
+                            city = cityDomain.toUiItem(),
+                            country = countryDomain?.toUiItem() ?: CountryUiItem()
+                        ) }
                         loadStaticMapForCurrentCity()
                     } else {
                         _uiState.update { it.copy(city = CityUiItem(), error = "City with ID $cityId not found.") }
@@ -102,7 +114,7 @@ class CityDetailsAndMapViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null, mapImage = null) }
 
             try {
-                val mapBytes = repository.getStaticMapForCoordinates(
+                val mapBytes = cityRepository.getStaticMapForCoordinates(
                     coordinates = cityUiItem.coord.toDomain(),
                     width = MAP_IMAGE_WIDTH,
                     height = MAP_IMAGE_HEIGHT,
@@ -123,6 +135,7 @@ class CityDetailsAndMapViewModel @Inject constructor(
 
     data class CityDetailsUiState(
         val city: CityUiItem,
+        val country: CountryUiItem,
         val mapImage: ByteArray? = null,
         val isLoading: Boolean = false,
         val error: String? = null
