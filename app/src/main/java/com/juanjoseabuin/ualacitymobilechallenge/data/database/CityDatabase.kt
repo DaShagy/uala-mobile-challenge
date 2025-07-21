@@ -4,12 +4,16 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CityDao
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CountryDao
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.CityEntity
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.CountryEntity
 
-@Database(entities = [CityEntity::class], version = 4, exportSchema = false)
+@Database(entities = [CityEntity::class, CountryEntity::class], version = 9, exportSchema = false)
 abstract class CityDatabase : RoomDatabase() {
 
     abstract fun cityDao(): CityDao
+    abstract fun countryDao(): CountryDao
 
     companion object {
         @Volatile

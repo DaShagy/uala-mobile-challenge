@@ -11,4 +11,4 @@ annotation class GoogleStaticMapsRetrofit
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class ApiNinjasCityDetailsRetrofit
+annotation class ApiNinjasRetrofit

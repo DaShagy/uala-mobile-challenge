@@ -1,6 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.source.local
 
-import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDao
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CityDao
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.toDomain
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.toDomainList
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.toEntity

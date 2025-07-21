@@ -2,6 +2,7 @@ package com.juanjoseabuin.ualacitymobilechallenge.domain.repository
 
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
+import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Country
 import kotlinx.coroutines.flow.Flow
 
 interface CityRepository {
@@ -25,10 +26,4 @@ interface CityRepository {
         zoom: Int,
         mapType: String
     ): ByteArray?
-
-    suspend fun getCityDetails(
-        id: Long,
-        name: String,
-        countryCode: String
-    ): City?
 }

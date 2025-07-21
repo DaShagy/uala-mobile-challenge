@@ -108,7 +108,6 @@ fun CityListScreen(
                             },
                             onDetailsButtonClick = {
                                 onCityDetailsButtonClick(it.id)
-                                viewModel.getCityDetails(it)
                             }
                         )
                     }

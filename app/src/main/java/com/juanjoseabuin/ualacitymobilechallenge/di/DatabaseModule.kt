@@ -1,8 +1,9 @@
 package com.juanjoseabuin.ualacitymobilechallenge.di
 
 import android.content.Context
-import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDao
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CityDao
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDatabase
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CountryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,5 +25,11 @@ object DatabaseModule {
     @Singleton
     fun provideCityDao(cityDatabase: CityDatabase): CityDao {
         return cityDatabase.cityDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCountryDao(cityDatabase: CityDatabase): CountryDao {
+        return cityDatabase.countryDao()
     }
 }
