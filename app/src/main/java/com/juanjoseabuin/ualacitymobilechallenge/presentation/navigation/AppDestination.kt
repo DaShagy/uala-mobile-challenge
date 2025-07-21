@@ -10,3 +10,6 @@ data object CityListDestination : AppDestination
 
 @Serializable
 data object StaticMapDestination : AppDestination
+
+@Serializable
+data object CityDetailsDestination : AppDestination
