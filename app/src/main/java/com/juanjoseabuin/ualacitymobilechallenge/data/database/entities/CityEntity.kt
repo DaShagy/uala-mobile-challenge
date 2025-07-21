@@ -24,7 +24,9 @@ data class CityEntity(
     val coord: CoordEntity,
     val isFavorite: Boolean,
     val isCapital: Boolean? = null,
-    val population: Long? = null
+    val population: Long? = null,
+    val region: String? = null,
+    val isUpdated: Boolean = false
 )
 
 data class CoordEntity(
@@ -40,7 +42,9 @@ fun CityEntity.toDomain(): City {
         coord = Coordinates(lon = this.coord.lon, lat = this.coord.lat),
         isFavorite = this.isFavorite,
         isCapital = isCapital,
-        population = population
+        population = population,
+        region = region,
+        isUpdated = isUpdated
     )
 }
 
@@ -50,7 +54,11 @@ fun City.toEntity(): CityEntity {
         country = this.country,
         name = this.name,
         coord = CoordEntity(lon = this.coord.lon, lat = this.coord.lat),
-        isFavorite = this.isFavorite
+        isFavorite = this.isFavorite,
+        isCapital = isCapital,
+        population = population,
+        region = region,
+        isUpdated = isUpdated
     )
 }
 

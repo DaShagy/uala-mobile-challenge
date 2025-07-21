@@ -1,6 +1,5 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 
-import android.icu.text.NumberFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,11 +41,12 @@ fun CityDetailsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val city = uiState.city
+    val country = uiState.country
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(city.name.ifEmpty { "City Details" }) },
+                title = { Text("City Details") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -95,24 +94,29 @@ fun CityDetailsScreen(
                     Text("Favorite: ${if (city.isFavorite) "Yes" else "No"}")
                 }
 
-                HorizontalDivider (modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp))
+                HorizontalDivider (modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp))
 
-                // Geographical Details
                 DetailRow(label = "Latitude:", value = "${city.coord.lat}")
                 DetailRow(label = "Longitude:", value = "${city.coord.lon}")
 
-                // Enriched Details (Population, Is Capital)
                 city.population?.let {
-                    DetailRow(
-                        label = "Population:",
-                        value = NumberFormat.getNumberInstance(Locale.getDefault()).format(it)
-                    )
+                    DetailRow(label = "Population:", value = it.toString())
                 } ?: DetailRow(label = "Population:", value = "N/A")
 
                 city.isCapital?.let {
                     DetailRow(label = "Is Capital:", value = if (it) "Yes" else "No")
                 } ?: DetailRow(label = "Is Capital:", value = "N/A")
 
+                city.region?.let {
+                    DetailRow(label = "Region:", value = it)
+                } ?: DetailRow(label = "Region:", value = "N/A")
+
+                DetailRow(label = "Country:", value = country.name)
+                DetailRow(label = "Country Region:", value = country.region)
+                DetailRow(label = "Country Population:", value = country.population.toString())
+                DetailRow(label = "Country Currency:", value = with(country.currency) { "$name $code" })
             }
         }
     }
