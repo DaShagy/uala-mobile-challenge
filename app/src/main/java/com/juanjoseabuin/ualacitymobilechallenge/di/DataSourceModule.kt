@@ -1,11 +1,14 @@
 package com.juanjoseabuin.ualacitymobilechallenge.di
 
 import android.content.Context
-import com.juanjoseabuin.ualacitymobilechallenge.data.database.CityDao
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CityDao
+import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CountryDao
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityJsonDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CityLocalDataSource
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.CountryLocalDataSource
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.LocalJsonCityDataSourceImpl
 import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.RoomCityDataSourceImpl
+import com.juanjoseabuin.ualacitymobilechallenge.data.source.local.RoomCountryDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -31,6 +34,12 @@ abstract class DataSourceModule {
         roomCityDataSourceImpl: RoomCityDataSourceImpl
     ): CityLocalDataSource
 
+    @Binds
+    @Singleton
+    abstract fun bindCountryLocalDataSource(
+        roomCountryDataSourceImpl: RoomCountryDataSourceImpl
+    ): CountryLocalDataSource
+
     @Module
     @InstallIn(SingletonComponent::class)
     object DataSourceProvidesModule {
@@ -55,6 +64,14 @@ abstract class DataSourceModule {
             cityDao: CityDao
         ): RoomCityDataSourceImpl {
             return RoomCityDataSourceImpl(cityDao)
+        }
+
+        @Provides
+        @Singleton
+        fun provideRoomCountryDataSourceImpl(
+            countryDao: CountryDao
+        ): RoomCountryDataSourceImpl {
+            return RoomCountryDataSourceImpl(countryDao)
         }
     }
 }
