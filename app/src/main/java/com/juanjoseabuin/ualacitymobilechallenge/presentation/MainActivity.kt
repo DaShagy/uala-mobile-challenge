@@ -18,7 +18,7 @@ import com.juanjoseabuin.ualacitymobilechallenge.data.AppInitializer
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.AdaptiveTwoPaneLayout
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.StaticMapViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
                 val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
                 val cityListViewModel: CityListViewModel = hiltViewModel()
-                val staticMapViewModel: StaticMapViewModel = hiltViewModel()
+                val cityDetailsViewModel: CityDetailsAndMapViewModel = hiltViewModel()
 
                 val navController = rememberNavController()
 
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
                     isPortrait = isPortrait,
                     navController = navController,
                     cityListViewModel = cityListViewModel,
-                    staticMapViewModel = staticMapViewModel
+                    cityDetailsViewModel = cityDetailsViewModel
                 )
             }
         }

@@ -12,7 +12,9 @@ data class CityUiItem(
     val country: String = "",
     val name: String = "",
     val coord: CoordinatesUiItem = CoordinatesUiItem(),
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val isCapital: Boolean? = null,
+    val population: Long? = null
 )
 
 @Serializable
@@ -39,7 +41,9 @@ fun CityUiItem.toDomain() =
         country = country,
         name = name,
         coord = coord.toDomain(),
-        isFavorite = isFavorite
+        isFavorite = isFavorite,
+        isCapital = isCapital,
+        population = population
     )
 
 fun City.toUiItem() =
@@ -48,5 +52,7 @@ fun City.toUiItem() =
         country = country,
         name = name,
         coord = coord.toUiItem(),
-        isFavorite = isFavorite
+        isFavorite = isFavorite,
+        isCapital = isCapital,
+        population = population
     )

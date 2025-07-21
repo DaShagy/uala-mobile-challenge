@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class StaticMapViewModel @Inject constructor(
+class CityDetailsAndMapViewModel @Inject constructor(
     private val repository: CityRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -28,12 +28,12 @@ class StaticMapViewModel @Inject constructor(
     private val initialCityId: Long = savedStateHandle.get<Long>(CITY_ID_KEY) ?: -1L
 
     private val _uiState = MutableStateFlow(
-        StaticMapUiState(
+        CityDetailsUiState(
             city = CityUiItem(), // Default "no city selected" state
             isLoading = false
         )
     )
-    val uiState: StateFlow<StaticMapUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<CityDetailsUiState> = _uiState.asStateFlow()
 
     init {
         uiState
@@ -121,7 +121,7 @@ class StaticMapViewModel @Inject constructor(
         }
     }
 
-    data class StaticMapUiState(
+    data class CityDetailsUiState(
         val city: CityUiItem,
         val mapImage: ByteArray? = null,
         val isLoading: Boolean = false,
