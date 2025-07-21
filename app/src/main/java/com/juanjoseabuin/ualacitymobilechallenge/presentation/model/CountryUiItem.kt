@@ -8,21 +8,24 @@ import kotlinx.serialization.Serializable
 data class CountryUiItem(
     val countryCode: String = "",
     val name: String = "",
-    val population: Long = -1L,
-    val region: String = "",
-    val currency: CurrencyUiItem = CurrencyUiItem()
+    val population: Long? = null,
+    val surfaceArea: Long? = null,
+    val region: String? = null,
+    val currency: CurrencyUiItem? = null,
+    val squareFlagUrl: String? = null,
+    val rectangleFlagUrl: String? = null
 )
 
 @Serializable
 data class CurrencyUiItem(
-    val code: String = "",
-    val name: String = ""
+    val code: String? = null,
+    val name: String? = null
 )
 
 fun CurrencyUiItem.toDomain() =
     Currency(
-        code = code,
-        name = name
+        code = code ?: "",
+        name = name ?: ""
     )
 
 fun Currency.toUiItem() =
@@ -37,7 +40,10 @@ fun CountryUiItem.toDomain() =
         name = name,
         population = population,
         region = region,
-        currency = currency.toDomain()
+        surfaceArea = surfaceArea,
+        currency = currency?.toDomain() ?: Currency(),
+        squareFlagUrl = this.squareFlagUrl,
+        rectangleFlagUrl = this.rectangleFlagUrl
     )
 
 fun Country.toUiItem() =
@@ -45,6 +51,9 @@ fun Country.toUiItem() =
         countryCode = countryCode,
         name = name,
         population = population,
+        surfaceArea = surfaceArea,
         region = region,
-        currency = currency.toUiItem()
+        currency = currency.toUiItem(),
+        squareFlagUrl = this.squareFlagUrl,
+        rectangleFlagUrl = this.rectangleFlagUrl
     )

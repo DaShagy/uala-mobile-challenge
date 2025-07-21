@@ -58,7 +58,8 @@ fun CountryApiResponse.toDomain(): Country {
     return Country(
         countryCode = this.iso2 ?: "",
         name = this.name ?: "Unknown Country",
-        population = this.population?.toLong() ?: 0L,
+        population = this.population?.toLong(),
+        surfaceArea = this.surfaceArea?.toLong(),
         region = this.region ?: "Unknown Region",
         currency = this.currency?.toDomain() ?: Currency("N/A", "N/A")
     )

@@ -1,5 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.R
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.SvgFromUrlImage
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,12 +78,25 @@ fun CityDetailsScreen(
                 Text("No city selected or details found.", modifier = Modifier.padding(16.dp))
             } else {
                 // City Name and Country
-                Text(
-                    text = "${city.name}, ${city.country}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "${city.name}, ${city.country}",
+                        style = MaterialTheme.typography.headlineMedium,
+                    )
+
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    country.rectangleFlagUrl?.let {
+                        SvgFromUrlImage(it)
+                    }
+                }
+
                 // Favorite Status
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -94,29 +110,43 @@ fun CityDetailsScreen(
                     Text("Favorite: ${if (city.isFavorite) "Yes" else "No"}")
                 }
 
-                HorizontalDivider (modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp))
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
 
                 DetailRow(label = "Latitude:", value = "${city.coord.lat}")
                 DetailRow(label = "Longitude:", value = "${city.coord.lon}")
 
                 city.population?.let {
                     DetailRow(label = "Population:", value = it.toString())
-                } ?: DetailRow(label = "Population:", value = "N/A")
+                }
 
                 city.isCapital?.let {
                     DetailRow(label = "Is Capital:", value = if (it) "Yes" else "No")
-                } ?: DetailRow(label = "Is Capital:", value = "N/A")
+                }
 
                 city.region?.let {
                     DetailRow(label = "Region:", value = it)
-                } ?: DetailRow(label = "Region:", value = "N/A")
+                }
 
                 DetailRow(label = "Country:", value = country.name)
-                DetailRow(label = "Country Region:", value = country.region)
+                country.region?.let {
+                    DetailRow(label = "Country Region:", value = it)
+                }
+
                 DetailRow(label = "Country Population:", value = country.population.toString())
-                DetailRow(label = "Country Currency:", value = with(country.currency) { "$name $code" })
+
+                country.surfaceArea?.let {
+                    DetailRow(label = "Country Surface Area:", value = "$it km2")
+                }
+                country.currency?.let {
+                    DetailRow(
+                        label = "Currency:",
+                        value = "${it.name} ${it.code}"
+                    )
+                }
             }
         }
     }

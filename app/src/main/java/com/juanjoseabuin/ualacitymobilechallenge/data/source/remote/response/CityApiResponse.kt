@@ -1,18 +1,19 @@
 package com.juanjoseabuin.ualacitymobilechallenge.data.source.remote.response
 
-import com.google.gson.annotations.SerializedName
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.City
 import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class CityApiResponse(
-    @SerializedName("name") val name: String,
-    @SerializedName("latitude") val latitude: Double,
-    @SerializedName("longitude") val longitude: Double,
-    @SerializedName("country") val country: String, // ISO-3166 alpha-2 code
-    @SerializedName("population") val population: Long?, // Population might be optional
-    @SerializedName("is_capital") val isCapital: Boolean?, // Whether it's a capital city
-    @SerializedName("state") val state: String?,
-    @SerializedName("region") val region: String?
+    @SerialName("name") val name: String,
+    @SerialName("latitude") val latitude: Double,
+    @SerialName("longitude") val longitude: Double,
+    @SerialName("country") val country: String, // ISO-3166 alpha-2 code
+    @SerialName("population") val population: Long?, // Population might be optional
+    @SerialName("is_capital") val isCapital: Boolean?, // Whether it's a capital city
+    @SerialName("region") val region: String?
 )
 
 fun CityApiResponse.toDomain(id: Long, isFavorite: Boolean): City {
