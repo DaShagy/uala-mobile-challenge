@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -16,6 +17,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.juanjoseabuin.ualacitymobilechallenge.data.AppInitializer
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.AdaptiveTwoPaneLayout
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
@@ -54,22 +57,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             UalaCityMobileChallengeTheme {
+                Surface(
+                    color = DarkBlue,
+                    contentColor = DesertWhite
+                ) { val configuration = LocalConfiguration.current
+                    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-                val configuration = LocalConfiguration.current
-                val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+                    val cityListViewModel: CityListViewModel = hiltViewModel()
+                    val cityDetailsViewModel: CityDetailsAndMapViewModel = hiltViewModel()
 
-                val cityListViewModel: CityListViewModel = hiltViewModel()
-                val cityDetailsViewModel: CityDetailsAndMapViewModel = hiltViewModel()
+                    val navController = rememberNavController()
 
-                val navController = rememberNavController()
-
-                AdaptiveTwoPaneLayout(
-                    modifier = Modifier.fillMaxSize(),
-                    isPortrait = isPortrait,
-                    navController = navController,
-                    cityListViewModel = cityListViewModel,
-                    cityDetailsViewModel = cityDetailsViewModel
-                )
+                    AdaptiveTwoPaneLayout(
+                        modifier = Modifier.fillMaxSize(),
+                        isPortrait = isPortrait,
+                        navController = navController,
+                        cityListViewModel = cityListViewModel,
+                        cityDetailsViewModel = cityDetailsViewModel
+                    )
+                }
             }
         }
     }
