@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -38,9 +39,10 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDeta
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CityDetailsScreen(
+    onBack: () -> Unit,
+    onToggleFavoriteStatus: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CityDetailsAndMapViewModel = hiltViewModel(),
-    onBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val city = uiState.city
@@ -53,6 +55,14 @@ fun CityDetailsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onToggleFavoriteStatus(city.id) }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(if (city.isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
+                            contentDescription = "Favorite",
+                        )
                     }
                 }
             )

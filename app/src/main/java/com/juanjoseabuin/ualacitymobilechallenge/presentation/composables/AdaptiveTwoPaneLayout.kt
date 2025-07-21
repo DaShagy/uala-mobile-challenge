@@ -50,10 +50,13 @@ fun AdaptiveTwoPaneLayout(
 
     val cityDetailScreen: @Composable () -> Unit = {
         CityDetailsScreen(
-            viewModel = cityDetailsViewModel,
             onBack = {
                 navController.popBackStack()
-            }
+            },
+            onToggleFavoriteStatus = { cityId ->
+                cityListViewModel.toggleCityFavoriteStatus(cityId)
+            },
+            viewModel = cityDetailsViewModel
         )
     }
 
