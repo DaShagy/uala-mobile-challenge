@@ -26,12 +26,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.StaticMapViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaticMapScreen(
-    viewModel: StaticMapViewModel,
+    viewModel: CityDetailsAndMapViewModel,
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {}
 ) {
