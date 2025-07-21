@@ -6,10 +6,12 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import javax.inject.Singleton
 
 @Module
@@ -42,10 +44,19 @@ object NetworkModule {
     @Singleton
     @ApiNinjasRetrofit
     fun provideApiNinjasRetrofit(okHttpClient: OkHttpClient): Retrofit {
+
+        val contentType = "application/json".toMediaType()
+        val json = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            coerceInputValues = true
+            prettyPrint = true
+        }
+
         return Retrofit.Builder()
             .baseUrl(BASE_API_NINJAS_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(json.asConverterFactory(contentType))
             .build()
     }
 
