@@ -10,13 +10,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CityDao {
-    @Query("SELECT * FROM cities ORDER BY name ASC")
+    @Query("SELECT * FROM cities ORDER BY name ASC, country ASC")
     fun getAllCities(): Flow<List<CityEntity>>
 
     @Query("SELECT * FROM cities WHERE id = :cityId")
     suspend fun getCityById(cityId: Long): CityEntity?
 
-    @Query("SELECT * FROM cities WHERE isFavorite = 1 ORDER BY name ASC")
+    @Query("SELECT * FROM cities WHERE isFavorite = 1 ORDER BY name ASC, country ASC")
     fun getFavoriteCities(): Flow<List<CityEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
