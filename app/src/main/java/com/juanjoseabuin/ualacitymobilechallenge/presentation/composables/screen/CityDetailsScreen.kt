@@ -3,7 +3,6 @@ package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.scree
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -79,12 +78,14 @@ fun CityDetailsScreen(
                                 contentDescription = "Favorite",
                             )
                         }*/
-                        Icon(
-                            imageVector = ImageVector.vectorResource(if (city.isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
-                            modifier = Modifier.size(24.dp),
-                            contentDescription = "Favorite",
-                        )
-                        Spacer(modifier = Modifier.size(16.dp))
+                        if (city.isFavorite) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_heart_filled),
+                                modifier = Modifier.size(24.dp),
+                                contentDescription = "Favorite",
+                            )
+                            Spacer(modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             )
