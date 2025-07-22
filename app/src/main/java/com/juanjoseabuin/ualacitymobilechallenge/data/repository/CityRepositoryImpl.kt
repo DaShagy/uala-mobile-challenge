@@ -67,15 +67,8 @@ class CityRepositoryImpl @Inject constructor(
 
 
     override suspend fun toggleCityFavoriteStatusById(id: Long) {
-        Log.i(TAG, "Toggling favorite status for city ID: $id.")
-        val cityEntity = withContext(dispatcher) { cityLocalDataSource.getCityById(id) } // Fetch the current city from DB
-        cityEntity?.let {
-            val updatedEntity = it.copy(isFavorite = !it.isFavorite) // Toggle status
-            withContext(dispatcher) { cityLocalDataSource.updateCity(updatedEntity) } // Perform the actual database write
-            Log.i(TAG, "City ID $id favorite status toggled to ${updatedEntity.isFavorite}.")
-        } ?: run {
-            Log.e(TAG, "City with ID $id not found when trying to toggle favorite status.")
-            throw IllegalArgumentException("City with ID $id not found in repository.")
+        withContext(dispatcher) {
+            cityLocalDataSource.toggleCityFavoriteStatusById(id)
         }
     }
 

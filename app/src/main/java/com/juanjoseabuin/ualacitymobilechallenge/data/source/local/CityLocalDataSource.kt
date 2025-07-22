@@ -14,4 +14,5 @@ interface CityLocalDataSource {
         searchQuery: String?,
         onlyFavorites: Boolean
     ): Flow<List<City>>
+    suspend fun toggleCityFavoriteStatusById(id: Long)
 }
