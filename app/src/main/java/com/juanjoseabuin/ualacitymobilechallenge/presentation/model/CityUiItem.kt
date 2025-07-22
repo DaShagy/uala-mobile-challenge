@@ -15,7 +15,8 @@ data class CityUiItem(
     val isFavorite: Boolean = false,
     val isCapital: Boolean? = null,
     val population: Long? = null,
-    val region: String? = null
+    val region: String? = null,
+    val fullName: String? = null
 )
 
 @Serializable
@@ -57,5 +58,6 @@ fun City.toUiItem() =
         isFavorite = isFavorite,
         isCapital = isCapital,
         population = population,
-        region = region
+        region = region,
+        fullName = fullName
     )
