@@ -11,10 +11,6 @@ import kotlinx.coroutines.flow.map
 
 class RoomCityDataSourceImpl(private val cityDao: CityDao) : CityLocalDataSource {
 
-    override fun getAllCities(): Flow<List<City>> {
-        return cityDao.getAllCities().map { it.toDomainList() }
-    }
-
     override suspend fun getCityById(id: Long): City? {
         return cityDao.getCityById(id)?.toDomain()
     }
@@ -23,15 +19,19 @@ class RoomCityDataSourceImpl(private val cityDao: CityDao) : CityLocalDataSource
         cityDao.updateCity(city.toEntity())
     }
 
-    override fun getFavoriteCities(): Flow<List<City>> {
-        return cityDao.getFavoriteCities().map { it.toDomainList() }
-    }
-
     override suspend fun insertCities(cities: List<City>) {
         cityDao.insertCities(cities.toEntityList())
     }
 
     override suspend fun getCityCount(): Int {
         return cityDao.getCityCount()
+    }
+
+    override fun getPaginatedCities(limit: Int, offset: Int, searchQuery: String?): Flow<List<City>> {
+        return cityDao.getPaginatedCities(limit, offset, searchQuery).map { it.toDomainList() }
+    }
+
+    override fun getPaginatedFavoriteCities(limit: Int, offset: Int): Flow<List<City>> {
+        return cityDao.getPaginatedFavoriteCities(limit, offset).map { it.toDomainList() }
     }
 }

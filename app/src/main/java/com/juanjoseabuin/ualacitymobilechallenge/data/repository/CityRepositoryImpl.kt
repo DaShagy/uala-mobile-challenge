@@ -51,19 +51,20 @@ class CityRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getCities(): Flow<List<City>> {
-        Log.i(TAG, "Getting all cities from local data source (Flow).")
-        return cityLocalDataSource.getAllCities()
-            .onEach { cities -> // <--- Log on each emission
-                Log.i(TAG, "Flow emitted ${cities.size} cities from getAllCities.")
-            }
-    }
-
-    override fun getFavoriteCities(): Flow<List<City>> {
-        Log.i(TAG, "Getting favorite cities from local data source (Flow).")
-        return cityLocalDataSource.getFavoriteCities()
-            .onEach { cities -> // <--- Log on each emission
-                Log.i(TAG, "Flow emitted ${cities.size} favorite cities from getFavoriteCities.")
+    override fun getPaginatedCities(
+        limit: Int,
+        offset: Int,
+        isFavoriteFilter: Boolean,
+        searchQuery: String?
+    ): Flow<List<City>> {
+        Log.d(TAG, "Fetching paginated cities from local: limit=$limit, offset=$offset, favorites=$isFavoriteFilter, query='$searchQuery'")
+        return if (isFavoriteFilter) {
+            cityLocalDataSource.getPaginatedFavoriteCities(limit, offset)
+        } else {
+            cityLocalDataSource.getPaginatedCities(limit, offset, searchQuery)
+        }
+            .onEach { cities ->
+                Log.d(TAG, "Paginated flow emitted ${cities.size} cities for offset $offset (favorites: $isFavoriteFilter, query: '$searchQuery').")
             }
     }
 
