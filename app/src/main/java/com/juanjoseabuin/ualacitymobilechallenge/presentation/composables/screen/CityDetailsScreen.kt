@@ -4,7 +4,6 @@ import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,12 +35,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMap
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMapZoomLevel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.SvgFromUrlImage
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun CityDetailsScreen(
     onBack: () -> Unit,
@@ -221,7 +220,8 @@ fun CityDetailsScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         StaticMap(
                             modifier = Modifier.height(640.dp),
-                            uiState = uiState
+                            uiState = uiState,
+                            zoomLevel = StaticMapZoomLevel.COUNTRY
                         )
                     }
                 }
