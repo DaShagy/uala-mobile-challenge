@@ -38,6 +38,9 @@ interface CityDao {
         limit: Int,
         offset: Int,
         searchQuery: String?,
-        onlyFavorites: Boolean // New parameter
+        onlyFavorites: Boolean
     ): Flow<List<CityEntity>>
+
+    @Query("UPDATE cities SET isFavorite = NOT isFavorite WHERE id = :cityId")
+    suspend fun toggleFavoriteStatus(cityId: Long)
 }

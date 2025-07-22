@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.Icon
@@ -38,20 +39,19 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
 @Composable
 fun CityCard(
     city: CityUiItem,
-    onCardClick: (Long) -> Unit,
-    onFavoriteIconClick: (Long) -> Unit,
-    onDetailsButtonClick: (CityUiItem) -> Unit,
-    isTogglingFavorite: Boolean,
+    onCardClick: () -> Unit,
+    onFavoriteIconClick: () -> Unit,
+    onDetailsButtonClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        onClick = { onCardClick(city.id) },
+        onClick = onCardClick,
         colors = CardColors(
-            containerColor = DesertWhite,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = DarkBlue,
+            contentColor = DesertWhite,
             disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
@@ -71,7 +71,7 @@ fun CityCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp, end = 32.dp),
                             text = city.fullName ?: "${city.name}, ${city.country}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -82,7 +82,7 @@ fun CityCard(
                             text = "Lat: ${city.coord.lat}, Lon: ${city.coord.lon}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = DarkBlue.copy(alpha = 0.65f),
+                            color = DesertWhite.copy(alpha = 0.66f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -96,7 +96,13 @@ fun CityCard(
                 ) {
                     Button(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { onDetailsButtonClick(city) }
+                        onClick = onDetailsButtonClick,
+                        colors = ButtonColors(
+                            containerColor = DesertWhite,
+                            contentColor = DarkBlue,
+                            disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     ) {
                         Text("Details")
                     }
@@ -104,12 +110,10 @@ fun CityCard(
             }
 
             AnimatedFavoriteIcon(
-                isFavorite = city.isFavorite,
-                onClick = { onFavoriteIconClick(city.id) },
-                isToggling = isTogglingFavorite,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 4.dp, end = 4.dp),
+                    .align(Alignment.TopEnd),
+                onClick = onFavoriteIconClick,
+                isFavorite = city.isFavorite
             )
         }
     }
@@ -121,35 +125,27 @@ private enum class FavoriteIconState { Filled, Outlined }
 fun BoxScope.AnimatedFavoriteIcon(
     isFavorite: Boolean,
     onClick: () -> Unit,
-    isToggling: Boolean, // Added for loading indicator within the icon
     modifier: Modifier = Modifier
 ) {
-    // --- Animation Logic for IconButton Icon ---
-    // Determine the current state for the animation transition
     val favoriteIconState = if (isFavorite) FavoriteIconState.Filled else FavoriteIconState.Outlined
-
-    // Create a transition based on the favoriteIconState
     val transition = updateTransition(favoriteIconState, label = "favoriteIconTransition")
 
-    // Animate the scale of the icon
     val iconScale by transition.animateFloat(
         transitionSpec = {
-            // Define the animation spec (e.g., spring for a bouncy effect)
             when {
                 FavoriteIconState.Outlined isTransitioningTo FavoriteIconState.Filled ->
-                    spring (dampingRatio = Spring .DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
-                else -> // For other transitions, e.g., filled to outlined
+                    spring (dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                else ->
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
             }
         },
         label = "iconScale"
     ) { state ->
         when (state) {
-            FavoriteIconState.Filled -> 1.2f // Icon scales up when it becomes filled
-            FavoriteIconState.Outlined -> 1.0f // Icon returns to normal size when outlined
+            FavoriteIconState.Filled -> 1.2f
+            FavoriteIconState.Outlined -> 1.0f
         }
     }
-    // --- End Animation Logic ---
 
     IconButton(
         onClick = onClick,
@@ -160,9 +156,10 @@ fun BoxScope.AnimatedFavoriteIcon(
         Icon(
             modifier = Modifier
                 .requiredSize(24.dp)
-                .graphicsLayer(scaleX = iconScale, scaleY = iconScale), // Apply the animated scale here
+                .graphicsLayer(scaleX = iconScale, scaleY = iconScale),
             imageVector = ImageVector.vectorResource(if (isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
-            contentDescription = "Favorite"
+            contentDescription = "Favorite",
+            tint = DesertWhite
         )
     }
 }
