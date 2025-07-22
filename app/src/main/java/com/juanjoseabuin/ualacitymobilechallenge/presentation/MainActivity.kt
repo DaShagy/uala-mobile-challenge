@@ -60,7 +60,8 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     color = DarkBlue,
                     contentColor = DesertWhite
-                ) { val configuration = LocalConfiguration.current
+                ) {
+                    val configuration = LocalConfiguration.current
                     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
                     val cityListViewModel: CityListViewModel = hiltViewModel()
