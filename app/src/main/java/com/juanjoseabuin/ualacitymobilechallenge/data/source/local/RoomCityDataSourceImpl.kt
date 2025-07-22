@@ -36,4 +36,8 @@ class RoomCityDataSourceImpl(private val cityDao: CityDao) : CityLocalDataSource
         return cityDao.getPaginatedCities(limit, offset, searchQuery, onlyFavorites)
             .map { it.toDomainList() }
     }
+
+    override suspend fun toggleCityFavoriteStatusById(id: Long) {
+        cityDao.toggleFavoriteStatus(id)
+    }
 }
