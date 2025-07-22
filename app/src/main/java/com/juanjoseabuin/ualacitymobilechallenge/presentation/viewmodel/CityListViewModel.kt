@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
+import com.juanjoseabuin.ualacitymobilechallenge.domain.utils.SearchCityUtils.searchByPrefix
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toUiItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,7 +44,6 @@ class CityListViewModel @Inject constructor(
     init {
         // Main flow for all cities, incorporating optimistic updates and search filtering
         repository.getCities()
-            .map { cities -> cities.map { it.toUiItem() } }
             .combine(_optimisticFavoriteChanges) { actualCities, optimisticChanges ->
                 // Apply optimistic changes on top of actual data from the repository
                 actualCities.map { city ->
@@ -57,7 +57,7 @@ class CityListViewModel @Inject constructor(
                 if (searchQuery.isBlank()) {
                     combinedCities
                 } else {
-                    combinedCities.filter { it.name.startsWith(searchQuery, ignoreCase = true) }
+                    combinedCities.searchByPrefix(searchQuery)
                 }
             }
             .debounce(300.milliseconds)
@@ -69,7 +69,7 @@ class CityListViewModel @Inject constructor(
                             currentState.error == null
 
                     currentState.copy(
-                        displayedCities = filteredCities,
+                        displayedCities = filteredCities.map { it.toUiItem() },
                         noResultsFound = noResults,
                         isLoading = false,
                         error = null
@@ -89,7 +89,6 @@ class CityListViewModel @Inject constructor(
 
         // Flow for favorite cities, also incorporating optimistic updates
         repository.getFavoriteCities()
-            .map { favorites -> favorites.map { it.toUiItem() } } // Map domain to UI items
             .combine(_optimisticFavoriteChanges) { actualFavorites, optimisticChanges ->
                 // Apply optimistic changes. Filter to ensure only actual favorites or optimistically favorited appear.
                 actualFavorites.map { fav ->
@@ -103,7 +102,7 @@ class CityListViewModel @Inject constructor(
                 if (searchQuery.isBlank()) {
                     combinedCities
                 } else {
-                    combinedCities.filter { it.name.startsWith(searchQuery, ignoreCase = true) }
+                    combinedCities.searchByPrefix(searchQuery)
                 }
             }
             .debounce(300.milliseconds)
@@ -113,7 +112,7 @@ class CityListViewModel @Inject constructor(
                 emit(emptyList())
             }
             .onEach { favorites ->
-                _uiState.update { it.copy(favoriteCities = favorites) }
+                _uiState.update { it.copy(favoriteCities = favorites.map { city -> city.toUiItem() }) }
             }
             .launchIn(viewModelScope)
     }
@@ -124,7 +123,7 @@ class CityListViewModel @Inject constructor(
     }
 
     fun onToggleFilteringByFavorites() {
-        _uiState.update { it.copy(isFilteringByFavorites = !uiState.value.isFilteringByFavorites) }
+        _uiState.update { it.copy(isFilteringByFavorites = !uiState.value.isFilteringByFavorites, searchQuery = "") }
     }
 
     fun toggleCityFavoriteStatus(cityId: Long) {

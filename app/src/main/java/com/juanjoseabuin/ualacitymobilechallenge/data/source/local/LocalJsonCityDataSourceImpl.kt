@@ -30,11 +30,7 @@ class LocalJsonCityDataSourceImpl(
                         reader.close()
 
                         val cities = json.decodeFromString<List<City>>(jsonString)
-                        Result.success(
-                            cities.sortedWith(
-                                compareBy<City> { it.name }.thenBy { it.country }
-                            )
-                        ) // Sort once on load
+                        Result.success(cities) // Sort once on load
                     } catch (e: Exception) {
                         e.printStackTrace() // Log the error
                         Result.failure(e)

@@ -12,7 +12,8 @@ import com.juanjoseabuin.ualacitymobilechallenge.domain.model.Coordinates
     indices = [
         Index(value = ["id"], unique = true),
         Index(value = ["isFavorite"]),
-        Index(value = ["name"])
+        Index(value = ["name"]),
+        Index(value = ["name", "country"])
     ]
 )
 data class CityEntity(
