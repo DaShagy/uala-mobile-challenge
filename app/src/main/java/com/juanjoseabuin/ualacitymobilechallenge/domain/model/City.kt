@@ -15,7 +15,10 @@ data class City(
     val population: Long? = null,
     val region: String? = null,
     val isUpdated: Boolean = false
-)
+) {
+    val fullName: String
+        get() = "${this.name} ,${this.country}"
+}
 
 @Serializable
 data class Coordinates(

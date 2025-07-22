@@ -213,7 +213,7 @@ private fun CityCard(
                     ) {
                         Text(
                             modifier = Modifier.padding(bottom = 4.dp),
-                            text = "${city.name}, ${city.country}",
+                            text = city.fullName ?: "${city.name}, ${city.country}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
