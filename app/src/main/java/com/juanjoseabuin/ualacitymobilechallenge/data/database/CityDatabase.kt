@@ -9,7 +9,7 @@ import com.juanjoseabuin.ualacitymobilechallenge.data.database.dao.CountryDao
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.CityEntity
 import com.juanjoseabuin.ualacitymobilechallenge.data.database.entities.CountryEntity
 
-@Database(entities = [CityEntity::class, CountryEntity::class], version = 13, exportSchema = false)
+@Database(entities = [CityEntity::class, CountryEntity::class], version = 14, exportSchema = false)
 abstract class CityDatabase : RoomDatabase() {
 
     abstract fun cityDao(): CityDao
