@@ -92,95 +92,84 @@ fun CityDetailsScreen(
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         if (uiState.isLoading) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+
                 CircularProgressIndicator(color = DarkBlue)
                 Spacer(Modifier.height(8.dp))
                 Text("Loading city details...")
-            }
         } else if (uiState.error != null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
                 Text(
                     text = "Error: ${uiState.error}",
                     modifier = Modifier.padding(16.dp)
                 )
-            }
         } else if (city.id == -1L) { // Default CityUiItem has ID -1L
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
                 Text(
                     "No city selected or details found.",
                     modifier = Modifier.padding(16.dp)
                 )
-            }
         } else {
-            // City Name and Country
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                        text = "${city.name},",
+                        style = MaterialTheme.typography.headlineMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterVertically),
+                        text = city.country,
+                        style = MaterialTheme.typography.headlineMedium,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    country.rectangleFlagUrl?.let {
+                        SvgFromUrlImage(
+                            imageUrl = it,
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                        )
+                    }
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                )
+            }
+
             LazyColumn(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-                    .padding(16.dp),
+                modifier = Modifier.padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            text = "${city.name},",
-                            style = MaterialTheme.typography.headlineMedium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            modifier = Modifier.align(Alignment.CenterVertically),
-                            text = city.country,
-                            style = MaterialTheme.typography.headlineMedium,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.size(8.dp))
-
-                        country.rectangleFlagUrl?.let {
-                            SvgFromUrlImage(
-                                imageUrl = it,
-                                modifier = Modifier.align(Alignment.CenterVertically),
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                    )
 
                     DetailRow(label = "Latitude:", value = "${city.coord.lat}")
                     DetailRow(label = "Longitude:", value = "${city.coord.lon}")
@@ -226,6 +215,7 @@ fun CityDetailsScreen(
                         )
                     }
                 }
+            }
             }
         }
     }
