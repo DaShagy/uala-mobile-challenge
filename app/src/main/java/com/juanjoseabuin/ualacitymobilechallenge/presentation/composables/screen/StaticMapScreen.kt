@@ -11,12 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,9 +24,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMap
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.StaticMapDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaticMapScreen(
     viewModel: CityDetailsAndMapViewModel,
@@ -43,7 +43,7 @@ fun StaticMapScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
+            TopBar(
                 title = { Text(uiState.city.name) },
                 navigationIcon = {
                     if (isPortrait) {
@@ -57,52 +57,10 @@ fun StaticMapScreen(
                 }
             )
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            when {
-                uiState.city.id == -1L -> {
-                    Text("Select a city to view its map.")
-                }
-                uiState.isLoading -> {
-                    CircularProgressIndicator()
-                    Text("Loading map...")
-                }
-                uiState.error != null -> {
-                    Text(text = "Map Error: ${uiState.error}")
-                }
-                uiState.mapImage != null -> {
-                    val imageBitmap: ImageBitmap? = uiState.mapImage?.let {
-                        try {
-                            BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            null
-                        }
-                    }
-
-                    if (imageBitmap != null) {
-                        Image(
-                            bitmap = imageBitmap,
-                            contentDescription = "Static Map for City",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            contentScale = ContentScale.Crop,
-                        )
-                    } else {
-                        Text("Failed to display map image.")
-                    }
-                }
-                else -> {
-                    Text("Map not available.")
-                }
-            }
-        }
+    ) { _ ->
+            StaticMap(
+                modifier = Modifier.fillMaxSize(),
+                uiState = uiState
+            )
     }
 }
