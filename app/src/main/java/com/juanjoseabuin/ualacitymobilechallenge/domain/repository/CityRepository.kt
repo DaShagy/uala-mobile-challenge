@@ -11,9 +11,12 @@ interface CityRepository {
 
     suspend fun importCitiesIntoDatabase(cities: List<City>)
 
-    fun getCities(): Flow<List<City>>
-
-    fun getFavoriteCities(): Flow<List<City>>
+    fun getPaginatedCities(
+        limit: Int,
+        offset: Int,
+        isFavoriteFilter: Boolean,
+        searchQuery: String?
+    ): Flow<List<City>>
 
     suspend fun getCityById(id: Long): City?
 
