@@ -12,6 +12,11 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.juanjoseabuin.ualacitymobilechallenge.BuildConfig
+import com.juanjoseabuin.ualacitymobilechallenge.di.qualifiers.ApiNinjasApiKey
+import com.juanjoseabuin.ualacitymobilechallenge.di.qualifiers.ApiNinjasRetrofit
+import com.juanjoseabuin.ualacitymobilechallenge.di.qualifiers.GoogleStaticMapsApiKey
+import com.juanjoseabuin.ualacitymobilechallenge.di.qualifiers.GoogleStaticMapsRetrofit
 import javax.inject.Singleton
 
 @Module
@@ -28,6 +33,20 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
             .build()
+    }
+
+    @Provides
+    @Singleton
+    @GoogleStaticMapsApiKey
+    fun provideGoogleStaticMapsApiKey(): String {
+        return BuildConfig.GOOGLE_STATIC_MAPS_API_KEY
+    }
+
+    @Provides
+    @Singleton
+    @ApiNinjasApiKey // Use the custom qualifier
+    fun provideApiNinjasApiKey(): String {
+        return BuildConfig.API_NINJAS_API_KEY
     }
 
     @Provides
