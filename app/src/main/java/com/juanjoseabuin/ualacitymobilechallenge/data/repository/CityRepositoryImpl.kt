@@ -66,13 +66,16 @@ class CityRepositoryImpl @Inject constructor(
 
         val apiKey = "AIzaSyDx5dZbOepLOzB-4Kzc73YsIn4w6db1qno"
 
+        val markerLocation = "${coordinates.lat},${coordinates.lon}"
+
         return try {
             val responseBody = googleStaticMapsService.getStaticMap(
                 center = center,
                 zoom = zoom,
                 size = size,
                 maptype = mapType,
-                key = apiKey
+                key = apiKey,
+                markers = markerLocation
             )
             responseBody.bytes()
         } catch (e: Exception) {

@@ -14,16 +14,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.StaticMapDestination
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMapZoomLevel.*
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 
+enum class StaticMapZoomLevel { CITY, COUNTRY }
+
 @Composable
 fun StaticMap(
     uiState: CityDetailsAndMapViewModel.CityDetailsUiState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    zoomLevel: StaticMapZoomLevel = CITY
 ) {
+    val mapImageByteArray = when(zoomLevel) {
+        CITY -> uiState.cityMapImage
+        COUNTRY -> uiState.cityInCountyMapImage
+    }
+
     Column(
         modifier = modifier
             .background(DarkBlue)
@@ -54,8 +62,9 @@ fun StaticMap(
                 )
             }
 
-            uiState.mapImage != null -> {
-                val imageBitmap: ImageBitmap? = uiState.mapImage.let {
+
+            mapImageByteArray != null -> {
+                val imageBitmap: ImageBitmap? = mapImageByteArray.let {
                     try {
                         BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
                     } catch (e: Exception) {

@@ -45,11 +45,11 @@ class CityDetailsAndMapViewModel @Inject constructor(
             .distinctUntilChanged()
             .onEach { city ->
                 if (city.id != -1L) {
-                    if (uiState.value.mapImage == null) {
+                    if (uiState.value.cityMapImage == null) {
                         loadStaticMapForCurrentCity()
                     }
                 } else {
-                    _uiState.update { it.copy(isLoading = false, error = null, mapImage = null) }
+                    _uiState.update { it.copy(isLoading = false, error = null, cityMapImage = null) }
                 }
             }
             .launchIn(viewModelScope) // Launch this flow collector in the ViewModel's scope
@@ -107,22 +107,31 @@ class CityDetailsAndMapViewModel @Inject constructor(
             val cityUiItem = uiState.value.city
 
             if (cityUiItem.id == -1L) {
-                _uiState.update { it.copy(isLoading = false, error = null, mapImage = null) }
+                _uiState.update { it.copy(isLoading = false, error = null, cityMapImage = null) }
                 return@launch
             }
 
-            _uiState.update { it.copy(isLoading = true, error = null, mapImage = null) }
+            _uiState.update { it.copy(isLoading = true, error = null, cityMapImage = null) }
 
             try {
-                val mapBytes = cityRepository.getStaticMapForCoordinates(
+                val cityMapBytes = cityRepository.getStaticMapForCoordinates(
                     coordinates = cityUiItem.coord.toDomain(),
                     width = MAP_IMAGE_WIDTH,
                     height = MAP_IMAGE_HEIGHT,
-                    zoom = MAP_ZOOM,
+                    zoom = CITY_MAP_ZOOM,
                     mapType = MAP_TYPE
                 )
-                _uiState.update { it.copy(mapImage = mapBytes) }
-                if (mapBytes == null) {
+
+                val cityInCountryMapBytes = cityRepository.getStaticMapForCoordinates(
+                    coordinates = cityUiItem.coord.toDomain(),
+                    width = MAP_IMAGE_WIDTH,
+                    height = MAP_IMAGE_HEIGHT,
+                    zoom = CITY_IN_COUNTRY_MAP_ZOOM,
+                    mapType = MAP_TYPE
+                )
+
+                _uiState.update { it.copy(cityMapImage = cityMapBytes, cityInCountyMapImage = cityInCountryMapBytes) }
+                if (cityMapBytes == null) {
                     _uiState.update { it.copy(error = "Failed to load map image: received empty data.") }
                 }
             } catch (e: Exception) {
@@ -136,7 +145,8 @@ class CityDetailsAndMapViewModel @Inject constructor(
     data class CityDetailsUiState(
         val city: CityUiItem,
         val country: CountryUiItem,
-        val mapImage: ByteArray? = null,
+        val cityMapImage: ByteArray? = null,
+        val cityInCountyMapImage: ByteArray? = null,
         val isLoading: Boolean = false,
         val error: String? = null
     )
@@ -146,7 +156,8 @@ class CityDetailsAndMapViewModel @Inject constructor(
 
         const val MAP_IMAGE_WIDTH = 640
         const val MAP_IMAGE_HEIGHT = 640
-        const val MAP_ZOOM = 12
+        const val CITY_MAP_ZOOM = 12
+        const val CITY_IN_COUNTRY_MAP_ZOOM = 6
         const val MAP_TYPE = "roadmap"
     }
 }
