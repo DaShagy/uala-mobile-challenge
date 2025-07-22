@@ -1,4 +1,4 @@
-package com.juanjoseabuin.ualacitymobilechallenge.di
+package com.juanjoseabuin.ualacitymobilechallenge.di.qualifiers
 
 import javax.inject.Qualifier
 
