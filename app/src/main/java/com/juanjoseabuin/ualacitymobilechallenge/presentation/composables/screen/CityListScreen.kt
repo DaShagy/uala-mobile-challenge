@@ -1,6 +1,14 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,29 +19,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,12 +46,13 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.juanjoseabuin.ualacitymobilechallenge.R
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.SearchBar
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CityListScreen(
     viewModel: CityListViewModel,
@@ -56,11 +61,12 @@ fun CityListScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            CenterAlignedTopAppBar(
+            TopBar(
                 title = {
                     val title =
                         if (uiState.isFilteringByFavorites) "Favorite Cities" else "All Cities"
@@ -75,11 +81,6 @@ fun CityListScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = DarkBlue,
-                    titleContentColor = DesertWhite,
-                    actionIconContentColor = DesertWhite
-                )
             )
         },
         containerColor = DarkBlue,
@@ -93,37 +94,13 @@ fun CityListScreen(
                 bottom = innerPadding.calculateBottomPadding()
             )
         ) {
-            OutlinedTextField(
+            SearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp, horizontal = 4.dp),
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.onSearchQueryChanged(it) },
-                placeholder = { Text("Search cities...") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search icon",
-                        tint = DarkBlue
-                    )
-                },
-                shape = RoundedCornerShape(28.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = DarkBlue,
-                    unfocusedTextColor = DarkBlue,
-                    focusedContainerColor = DesertWhite,
-                    unfocusedContainerColor = DesertWhite,
-                    cursorColor = DarkBlue,
-                    focusedLeadingIconColor = DarkBlue,
-                    unfocusedLeadingIconColor = DarkBlue,
-                    focusedTrailingIconColor = DarkBlue,
-                    unfocusedTrailingIconColor = DarkBlue,
-                    focusedLabelColor = DarkBlue,
-                    unfocusedLabelColor = DarkBlue.copy(alpha = 0.7f),
-                    focusedPlaceholderColor = DarkBlue.copy(alpha = 0.5f),
-                    unfocusedPlaceholderColor = DarkBlue.copy(alpha = 0.5f),
-                )
+                placeholder = { Text("Search cities...") }
             )
 
             if (uiState.isLoading || (uiState.displayedCities.isEmpty() && uiState.searchQuery.isBlank())) {
@@ -134,7 +111,9 @@ fun CityListScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        color = DesertWhite
+                    )
                     Spacer(Modifier.height(8.dp))
                     Text("Loading initial data...")
                 }
@@ -164,7 +143,8 @@ fun CityListScreen(
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    state = listState
                 ) {
                     val displayedCities =
                         if (uiState.isFilteringByFavorites) uiState.favoriteCities
@@ -191,6 +171,10 @@ fun CityListScreen(
             }
         }
     }
+
+    LaunchedEffect(uiState.isFilteringByFavorites, uiState.searchQuery) {
+        listState.scrollToItem(0)
+    }
 }
 
 @Composable
@@ -213,63 +197,111 @@ private fun CityCard(
             disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
     ) {
-        Row(
+        Box (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = { onFavoriteIconClick(city.id) }
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .requiredSize(24.dp),
-                    imageVector = ImageVector.vectorResource(if (city.isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
-                    contentDescription = "Favorite"
-                )
-            }
-
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.padding(16.dp),
             ) {
-                Text(
-                    modifier = Modifier.padding(bottom = 4.dp),
-                    text = city.name,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Lat: ${city.coord.lat}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkBlue.copy(alpha = 0.65f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Lon: ${city.coord.lon}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkBlue.copy(alpha = 0.65f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = { onDetailsButtonClick(city) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Text("Details")
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(bottom = 4.dp),
+                            text = "${city.name}, ${city.country}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "Lat: ${city.coord.lat}, Lon: ${city.coord.lon}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DarkBlue.copy(alpha = 0.65f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onDetailsButtonClick(city) }
+                    ) {
+                        Text("Details")
+                    }
                 }
             }
+
+            AnimatedFavoriteIcon(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 4.dp, end = 4.dp),
+                onClick = { onFavoriteIconClick(city.id) },
+                isFavorite = city.isFavorite
+            )
         }
+    }
+}
+
+private enum class FavoriteIconState { Filled, Outlined }
+
+@Composable
+fun BoxScope.AnimatedFavoriteIcon(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // --- Animation Logic for IconButton Icon ---
+    // Determine the current state for the animation transition
+    val favoriteIconState = if (isFavorite) FavoriteIconState.Filled else FavoriteIconState.Outlined
+
+    // Create a transition based on the favoriteIconState
+    val transition = updateTransition(favoriteIconState, label = "favoriteIconTransition")
+
+    // Animate the scale of the icon
+    val iconScale by transition.animateFloat(
+        transitionSpec = {
+            // Define the animation spec (e.g., spring for a bouncy effect)
+            when {
+                FavoriteIconState.Outlined isTransitioningTo FavoriteIconState.Filled ->
+                    spring (dampingRatio = Spring .DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                else -> // For other transitions, e.g., filled to outlined
+                    spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+            }
+        },
+        label = "iconScale"
+    ) { state ->
+        when (state) {
+            FavoriteIconState.Filled -> 1.2f // Icon scales up when it becomes filled
+            FavoriteIconState.Outlined -> 1.0f // Icon returns to normal size when outlined
+        }
+    }
+    // --- End Animation Logic ---
+
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = 8.dp, end = 8.dp)
+    ) {
+        Icon(
+            modifier = Modifier
+                .requiredSize(24.dp)
+                .graphicsLayer(scaleX = iconScale, scaleY = iconScale), // Apply the animated scale here
+            imageVector = ImageVector.vectorResource(if (isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
+            contentDescription = "Favorite"
+        )
     }
 }
