@@ -14,7 +14,7 @@ interface CityRepository {
     fun getPaginatedCities(
         limit: Int,
         offset: Int,
-        isFavoriteFilter: Boolean,
+        onlyFavorites: Boolean,
         searchQuery: String?
     ): Flow<List<City>>
 
