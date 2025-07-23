@@ -37,12 +37,12 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAction
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsState
 
 @Composable
 fun CityDetailsScreenRoot(
-    viewModel: CityDetailsAndMapViewModel,
+    viewModel: CityDetailsViewModel,
     onBack: () -> Unit,
 ) {
 
