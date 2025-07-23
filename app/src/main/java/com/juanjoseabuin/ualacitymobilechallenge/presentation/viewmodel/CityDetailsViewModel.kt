@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CountryRepository
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMapState
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CountryUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toDomain
@@ -24,14 +25,14 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class CityDetailsAndMapViewModel @Inject constructor(
+class CityDetailsViewModel @Inject constructor(
     private val cityRepository: CityRepository,
     private val countryRepository: CountryRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     // Retrieve initial city ID from savedStateHandle
-    private val initialCityId: Long = savedStateHandle.get<Long>(CITY_ID_KEY) ?: -1L
+    private val initialCityId: Long = savedStateHandle.get<Long>(DETAILS_CITY_ID_KEY) ?: -1L
 
     // Internal mutable StateFlow representing the current UI state
     private val _state = MutableStateFlow(
@@ -87,7 +88,7 @@ class CityDetailsAndMapViewModel @Inject constructor(
      */
     private fun loadCityDetails(cityId: Long) {
         viewModelScope.launch {
-            savedStateHandle[CITY_ID_KEY] = cityId // Persist the current city ID
+            savedStateHandle[DETAILS_CITY_ID_KEY] = cityId // Persist the current city ID
 
             if (cityId != -1L) {
                 _state.update { it.copy(isLoading = true, error = null) }
@@ -154,7 +155,7 @@ class CityDetailsAndMapViewModel @Inject constructor(
     }
 
     companion object {
-        private const val CITY_ID_KEY = "city_details_city_id" // Specific key for CityDetails
+        private const val DETAILS_CITY_ID_KEY = "city_details_city_id" // Specific key for CityDetails
         private const val TAG = "CityDetailsViewModel"
 
         const val MAP_IMAGE_WIDTH = 640
@@ -171,10 +172,10 @@ sealed class CityDetailsAction {
 }
 
 data class CityDetailsState(
-    val city: CityUiItem = CityUiItem(), // Represents the selected city's UI data
+    override val city: CityUiItem = CityUiItem(), // Represents the selected city's UI data
     val country: CountryUiItem = CountryUiItem(), // Represents the city's country UI data
-    val cityMapImage: ByteArray? = null, // Byte array for the city's static map image
-    val isLoading: Boolean = false, // True if data or maps are currently being loaded
-    val error: String? = null, // Any error message to display
+    override val cityMapImage: ByteArray? = null, // Byte array for the city's static map image
+    override val isLoading: Boolean = false, // True if data or maps are currently being loaded
+    override val error: String? = null, // Any error message to display
     val isTogglingFavorite: Boolean = false // Added for optimistic UI feedback on favorite status
-)
+) : StaticMapState
