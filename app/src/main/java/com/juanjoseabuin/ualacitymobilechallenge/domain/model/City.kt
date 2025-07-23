@@ -17,7 +17,7 @@ data class City(
     val isUpdated: Boolean = false
 ) {
     val fullName: String
-        get() = "${this.name} ,${this.country}"
+        get() = "${this.name}, ${this.country}"
 }
 
 @Serializable

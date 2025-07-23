@@ -21,24 +21,26 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.CityDetailsDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAction
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityMapAction
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityMapViewModel
 
 @Composable
 fun AdaptiveTwoPaneLayout(
     isPortrait: Boolean,
     navController: NavHostController,
     cityListViewModel: CityListViewModel,
-    cityDetailsViewModel: CityDetailsAndMapViewModel,
+    cityDetailsViewModel: CityDetailsViewModel,
+    cityMapViewModel: CityMapViewModel,
     modifier: Modifier = Modifier
 ) {
     val cityId = cityDetailsViewModel.state.collectAsState().value.city.id
-    val currentBackStackEntry by navController.currentBackStackEntryAsState()
 
     val cityListScreen: @Composable () -> Unit = {
         CityListScreenRoot(
             viewModel = cityListViewModel,
             onCityCardClick = { cityId ->
-                cityDetailsViewModel.onAction(CityDetailsAction.LoadCityDetails(cityId))
+                cityMapViewModel.onAction(CityMapAction.LoadMap(cityId))
                 navController.navigate(StaticMapDestination)
             },
             onCityDetailsButtonClick = { cityId ->
@@ -50,7 +52,7 @@ fun AdaptiveTwoPaneLayout(
 
     val staticMapScreen: @Composable () -> Unit = {
         StaticMapScreenRoot(
-            viewModel = cityDetailsViewModel,
+            viewModel = cityMapViewModel,
             onBack = {
                 if (isPortrait) {
                     navController.popBackStack()
