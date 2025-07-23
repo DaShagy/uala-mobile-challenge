@@ -38,7 +38,9 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -95,13 +97,18 @@ fun CityListScreen(
     val allCitiesListState = rememberLazyListState()
     val favoriteCitiesListState = rememberLazyListState()
 
-    LaunchedEffect(state.allCities) {
-        allCitiesListState.animateScrollToItem(0)
+
+    LaunchedEffect(state.searchQuery, state.selectedTabIndex) {
+        val currentListState = when (state.selectedTabIndex) {
+            CityListViewModel.ALL_CITIES_TAB_INDEX -> allCitiesListState
+            CityListViewModel.FAVORITE_CITIES_TAB_INDEX -> favoriteCitiesListState
+            else -> null
+        }
+        if (currentListState != null && (state.allCitiesCurrentPage == 0 || state.favoriteCitiesCurrentPage == 0)) {
+            currentListState.scrollToItem(0)
+        }
     }
 
-    LaunchedEffect(state.favoriteCities) {
-        favoriteCitiesListState.animateScrollToItem(0)
-    }
 
     LaunchedEffect(state.selectedTabIndex) {
         pagerState.animateScrollToPage(state.selectedTabIndex)
@@ -218,7 +225,9 @@ fun CityListScreen(
                                         CityListContent(
                                             cities = state.allCities,
                                             listState = allCitiesListState,
-                                            onAction = onAction
+                                            onAction = onAction,
+                                            isLoadingNextPage = state.isLoadingAllCitiesNextPage,
+                                            hasMoreCities = state.hasMoreAllCities
                                         )
                                     }
                                 }
@@ -242,7 +251,9 @@ fun CityListScreen(
                                         CityListContent(
                                             cities = state.favoriteCities,
                                             listState = favoriteCitiesListState,
-                                            onAction = onAction
+                                            onAction = onAction,
+                                            isLoadingNextPage = state.isLoadingFavoriteCitiesNextPage,
+                                            hasMoreCities = state.hasMoreFavoriteCities
                                         )
                                     }
                                 }
@@ -255,14 +266,32 @@ fun CityListScreen(
     }
 }
 
-// Extracted the LazyColumn content into a separate composable for clarity
 @Composable
 private fun CityListContent(
     cities: List<CityUiItem>,
     listState: LazyListState,
     onAction: (CityListAction) -> Unit,
+    isLoadingNextPage: Boolean,
+    hasMoreCities: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val lastVisibleItemIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index
+            val totalItemsCount = layoutInfo.totalItemsCount
+
+            // Load more if we are near the end (e.g., within 5 items)
+            lastVisibleItemIndex != null && (lastVisibleItemIndex >= totalItemsCount - 5) && hasMoreCities && !isLoadingNextPage
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) {
+            onAction(CityListAction.OnLoadNextPage)
+        }
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()

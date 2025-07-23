@@ -24,13 +24,20 @@ interface CityDao {
     suspend fun getCityCount(): Int
 
     @Query("""
-        SELECT * FROM cities 
-        WHERE (:searchQuery IS NULL OR :searchQuery = '' OR name COLLATE NOCASE LIKE :searchQuery || '%')
-        ORDER BY name ASC, country ASC 
+        SELECT * FROM cities
+        WHERE (
+                (:searchQuery IS NULL OR :searchQuery = '')  -- Condition 1: If search query is empty/null
+                OR
+                (name COLLATE NOCASE LIKE :searchQuery || '%') -- Condition 2: If search query is not empty, match name
+              )
+          AND (:onlyFavorites = 0 OR isFavorite = 1) -- Condition 3: Apply favorite filter
+        ORDER BY name ASC, country ASC
         LIMIT :limit OFFSET :offset
     """)
-    fun getPaginatedCities(limit: Int, offset: Int, searchQuery: String?): Flow<List<CityEntity>>
-
-    @Query("SELECT * FROM cities WHERE isFavorite = 1 ORDER BY name ASC, country ASC LIMIT :limit OFFSET :offset")
-    fun getPaginatedFavoriteCities(limit: Int, offset: Int): Flow<List<CityEntity>>
+    fun getPaginatedCities(
+        limit: Int,
+        offset: Int,
+        searchQuery: String?,
+        onlyFavorites: Boolean // New parameter
+    ): Flow<List<CityEntity>>
 }

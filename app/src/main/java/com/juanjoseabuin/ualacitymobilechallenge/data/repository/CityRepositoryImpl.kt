@@ -54,19 +54,17 @@ class CityRepositoryImpl @Inject constructor(
     override fun getPaginatedCities(
         limit: Int,
         offset: Int,
-        isFavoriteFilter: Boolean,
+        onlyFavorites: Boolean, // This comes directly from the ViewModel/UI
         searchQuery: String?
     ): Flow<List<City>> {
-        Log.d(TAG, "Fetching paginated cities from local: limit=$limit, offset=$offset, favorites=$isFavoriteFilter, query='$searchQuery'")
-        return if (isFavoriteFilter) {
-            cityLocalDataSource.getPaginatedFavoriteCities(limit, offset)
-        } else {
-            cityLocalDataSource.getPaginatedCities(limit, offset, searchQuery)
-        }
+        Log.d(TAG, "Fetching paginated cities from local: limit=$limit, offset=$offset, favorites=$onlyFavorites, query='$searchQuery'")
+        // Directly call the unified method on the local data source
+        return cityLocalDataSource.getPaginatedCities(limit, offset, searchQuery, onlyFavorites)
             .onEach { cities ->
-                Log.d(TAG, "Paginated flow emitted ${cities.size} cities for offset $offset (favorites: $isFavoriteFilter, query: '$searchQuery').")
+                Log.d(TAG, "Paginated flow emitted ${cities.size} cities for offset $offset (favorites: $onlyFavorites, query: '$searchQuery').")
             }
     }
+
 
     override suspend fun toggleCityFavoriteStatusById(id: Long) {
         Log.i(TAG, "Toggling favorite status for city ID: $id.")

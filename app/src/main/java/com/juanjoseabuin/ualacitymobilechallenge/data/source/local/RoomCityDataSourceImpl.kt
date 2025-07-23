@@ -27,11 +27,13 @@ class RoomCityDataSourceImpl(private val cityDao: CityDao) : CityLocalDataSource
         return cityDao.getCityCount()
     }
 
-    override fun getPaginatedCities(limit: Int, offset: Int, searchQuery: String?): Flow<List<City>> {
-        return cityDao.getPaginatedCities(limit, offset, searchQuery).map { it.toDomainList() }
-    }
-
-    override fun getPaginatedFavoriteCities(limit: Int, offset: Int): Flow<List<City>> {
-        return cityDao.getPaginatedFavoriteCities(limit, offset).map { it.toDomainList() }
+    override fun getPaginatedCities(
+        limit: Int,
+        offset: Int,
+        searchQuery: String?,
+        onlyFavorites: Boolean // Receive the new parameter
+    ): Flow<List<City>> {
+        return cityDao.getPaginatedCities(limit, offset, searchQuery, onlyFavorites)
+            .map { it.toDomainList() }
     }
 }
