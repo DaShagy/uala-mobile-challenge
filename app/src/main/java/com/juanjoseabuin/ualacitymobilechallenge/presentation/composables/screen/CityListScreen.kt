@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -275,7 +276,7 @@ private fun CityListContent(
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp), // Apply horizontal padding here
+            .padding(horizontal = 16.dp).testTag("city_list_scrollable"), // Apply horizontal padding here
         verticalArrangement = Arrangement.spacedBy(16.dp),
         state = listState
     ) {
