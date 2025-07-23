@@ -19,7 +19,16 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.juanjoseabuin.ualacitymobilechallenge.HiltTestRunner"
+    }
+
+    packaging {
+        resources.excludes.addAll(
+            setOf(
+                "META-INF/LICENSE-notice.md",
+                "META-INF/LICENSE.md"
+            )
+        )
     }
 
     buildTypes {
@@ -46,6 +55,14 @@ android {
     secrets {
         propertiesFileName = "secrets.properties"
     }
+
+    hilt {
+        enableAggregatingTask = false
+    }
+}
+
+ksp {
+    arg("dagger.hilt.disableCrossCompilationRootValidation", "true")
 }
 
 dependencies {
@@ -90,12 +107,21 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
-    testImplementation(libs.kotlinx.serialization)
+
+    // Android Instrumented Test Dependencies
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.mockk.android)
+
+    // Hilt for Android Instrumented Tests
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
+
+    // Debugging Compose UI tests
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     testImplementation(kotlin("test"))
