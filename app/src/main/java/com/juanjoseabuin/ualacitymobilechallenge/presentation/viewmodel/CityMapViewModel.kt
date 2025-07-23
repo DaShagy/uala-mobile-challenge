@@ -3,7 +3,9 @@ package com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.juanjoseabuin.ualacitymobilechallenge.domain.model.StaticMapConfig
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
+import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.MapRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMapState
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toDomain
@@ -19,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CityMapViewModel @Inject constructor(
     private val cityRepository: CityRepository,
+    private val mapRepository: MapRepository
 ) : ViewModel() {
 
     // Internal mutable StateFlow representing the current UI state
@@ -30,6 +33,7 @@ class CityMapViewModel @Inject constructor(
             cityMapImage = null
         )
     )
+
     // Expose immutable StateFlow to the UI
     val state: StateFlow<CityMapState> = _state.asStateFlow()
 
@@ -42,6 +46,7 @@ class CityMapViewModel @Inject constructor(
                 Log.d(TAG, "Action: LoadMap received for city ID: ${action.cityId}")
                 loadCityDetailsAndMap(action.cityId)
             }
+
             CityMapAction.OnBackIconClick -> {
                 Log.d(TAG, "Action: OnBackIconClick received. UI will handle navigation.")
             }
@@ -73,7 +78,10 @@ class CityMapViewModel @Inject constructor(
 
                 val cityUiItem = cityEntity.toUiItem()
                 _state.update { it.copy(city = cityUiItem, error = null) }
-                Log.d(TAG, "Successfully loaded city details for ID: $cityId - ${cityUiItem.fullName}")
+                Log.d(
+                    TAG,
+                    "Successfully loaded city details for ID: $cityId - ${cityUiItem.fullName}"
+                )
 
 
                 if (cityUiItem.coord.lat == 0.0 && cityUiItem.coord.lon == 0.0) {
@@ -82,12 +90,14 @@ class CityMapViewModel @Inject constructor(
                     return@launch // Exit if coordinates are invalid
                 }
 
-                val cityMapBytes = cityRepository.getStaticMapForCoordinates(
-                    coordinates = cityUiItem.coord.toDomain(), // Use the *just fetched* city's coordinates
-                    width = MAP_IMAGE_WIDTH,
-                    height = MAP_IMAGE_HEIGHT,
-                    zoom = CITY_MAP_ZOOM,
-                    mapType = MAP_TYPE
+                val cityMapBytes = mapRepository.getStaticMap(
+                    StaticMapConfig.CityMap(
+                        coordinates = cityUiItem.coord.toDomain(), // Use the *just fetched* city's coordinates
+                        width = MAP_IMAGE_WIDTH,
+                        height = MAP_IMAGE_HEIGHT,
+                        zoom = CITY_MAP_ZOOM,
+                        mapType = MAP_TYPE
+                    )
                 )
 
                 _state.update { it.copy(cityMapImage = cityMapBytes) }
@@ -136,4 +146,4 @@ data class CityMapState(
     override val cityMapImage: ByteArray? = null,
     override val isLoading: Boolean = false,
     override val error: String? = null
-): StaticMapState
+) : StaticMapState

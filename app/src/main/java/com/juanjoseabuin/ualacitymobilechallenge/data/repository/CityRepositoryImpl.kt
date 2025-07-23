@@ -23,9 +23,7 @@ import javax.inject.Singleton
 class CityRepositoryImpl @Inject constructor(
     private val cityLocalDataSource: CityLocalDataSource,
     private val countryLocalDataSource: CountryLocalDataSource,
-    private val googleStaticMapsService: GoogleStaticMapsService,
     private val apiNinjasService: ApiNinjasService,
-    @GoogleStaticMapsApiKey private val googleStaticMapsApiKey: String,
     @ApiNinjasApiKey private val apiNinjasApiKey: String,
     @CityListDispatcher private val dispatcher: CoroutineDispatcher
 ) : CityRepository {
@@ -69,36 +67,6 @@ class CityRepositoryImpl @Inject constructor(
     override suspend fun toggleCityFavoriteStatusById(id: Long) {
         withContext(dispatcher) {
             cityLocalDataSource.toggleCityFavoriteStatusById(id)
-        }
-    }
-
-    override suspend fun getStaticMapForCoordinates(
-        coordinates: Coordinates,
-        width: Int,
-        height: Int,
-        zoom: Int,
-        mapType: String
-    ): ByteArray? {
-        Log.i(TAG, "Requesting static map for coordinates: ${coordinates.lat},${coordinates.lon}")
-        val center = "${coordinates.lat},${coordinates.lon}"
-        val size = "${width}x${height}"
-        val markerLocation = "${coordinates.lat},${coordinates.lon}"
-
-        return try {
-            val responseBody = googleStaticMapsService.getStaticMap(
-                center = center,
-                zoom = zoom,
-                size = size,
-                maptype = mapType,
-                key = googleStaticMapsApiKey, // <--- Used injected key
-                markers = markerLocation
-            )
-            val mapBytes = responseBody.bytes()
-            Log.i(TAG, "Successfully fetched static map (${mapBytes.size} bytes).")
-            mapBytes
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching static map for coordinates $center: ${e.message}", e)
-            null
         }
     }
 

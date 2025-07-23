@@ -2,8 +2,10 @@ package com.juanjoseabuin.ualacitymobilechallenge.di
 
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CityRepositoryImpl
 import com.juanjoseabuin.ualacitymobilechallenge.data.repository.CountryRepositoryImpl
+import com.juanjoseabuin.ualacitymobilechallenge.data.repository.MapRepositoryImpl
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CountryRepository
+import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.MapRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -25,4 +27,10 @@ abstract class RepositoryModule {
     abstract fun bindCountryRepository(
         countryRepositoryImpl: CountryRepositoryImpl
     ): CountryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMapRepository(
+        mapRepositoryImpl: MapRepositoryImpl
+    ): MapRepository
 }
