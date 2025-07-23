@@ -14,13 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsState
 
 @Composable
 fun StaticMap(
-    state: CityDetailsState,
+    state: StaticMapState,
     modifier: Modifier = Modifier,
 ) {
 
@@ -58,7 +58,7 @@ fun StaticMap(
             state.cityMapImage != null -> {
                 val imageBitmap: ImageBitmap? = state.cityMapImage.let {
                     try {
-                        BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
+                        BitmapFactory.decodeByteArray(it, 0, it!!.size)?.asImageBitmap()
                     } catch (e: Exception) {
                         null
                     }
@@ -89,4 +89,11 @@ fun StaticMap(
             }
         }
     }
+}
+
+interface StaticMapState {
+    val city: CityUiItem
+    val isLoading: Boolean
+    val error: String?
+    val cityMapImage: ByteArray?
 }

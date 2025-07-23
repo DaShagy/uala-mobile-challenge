@@ -21,7 +21,8 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.UalaCityMobileChallengeTheme
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityMapViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -65,7 +66,8 @@ class MainActivity : ComponentActivity() {
                     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
                     val cityListViewModel: CityListViewModel = hiltViewModel()
-                    val cityDetailsViewModel: CityDetailsAndMapViewModel = hiltViewModel()
+                    val cityDetailsViewModel: CityDetailsViewModel = hiltViewModel()
+                    val cityMapViewModel: CityMapViewModel = hiltViewModel()
 
                     val navController = rememberNavController()
 
@@ -74,7 +76,8 @@ class MainActivity : ComponentActivity() {
                         isPortrait = isPortrait,
                         navController = navController,
                         cityListViewModel = cityListViewModel,
-                        cityDetailsViewModel = cityDetailsViewModel
+                        cityDetailsViewModel = cityDetailsViewModel,
+                        cityMapViewModel = cityMapViewModel
                     )
                 }
             }

@@ -16,13 +16,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMap
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAction
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsState
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityMapAction
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityMapState
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityMapViewModel
 
 @Composable
 fun StaticMapScreenRoot(
-    viewModel: CityDetailsAndMapViewModel,
+    viewModel: CityMapViewModel,
     onBack: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -31,7 +31,7 @@ fun StaticMapScreenRoot(
         state = state,
         onAction = { action ->
             when (action) {
-                CityDetailsAction.OnBackIconClick -> onBack()
+                CityMapAction.OnBackIconClick -> onBack()
                 else -> Unit
             }
 
@@ -42,8 +42,8 @@ fun StaticMapScreenRoot(
 
 @Composable
 fun StaticMapScreen(
-    state: CityDetailsState, // Now receives state directly
-    onAction: (CityDetailsAction) -> Unit, // Now receives actions callback
+    state: CityMapState,
+    onAction: (CityMapAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val configuration = LocalConfiguration.current
@@ -56,7 +56,7 @@ fun StaticMapScreen(
                 title = { Text(state.city.name) },
                 navigationIcon = {
                     if (isPortrait) {
-                        IconButton(onClick = { onAction(CityDetailsAction.OnBackIconClick) }) {
+                        IconButton(onClick = { onAction(CityMapAction.OnBackIconClick) }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
