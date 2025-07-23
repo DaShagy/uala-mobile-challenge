@@ -1,42 +1,51 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen
 
 import android.content.res.Configuration
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMap
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.StaticMapDestination
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAction
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsState
+
+@Composable
+fun StaticMapScreenRoot(
+    viewModel: CityDetailsAndMapViewModel,
+    onBack: () -> Unit = {}
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    StaticMapScreen(
+        state = state,
+        onAction = { action ->
+            when (action) {
+                CityDetailsAction.OnBackIconClick -> onBack()
+                else -> Unit
+            }
+
+            viewModel.onAction(action)
+        }
+    )
+}
 
 @Composable
 fun StaticMapScreen(
-    viewModel: CityDetailsAndMapViewModel,
-    modifier: Modifier = Modifier,
-    onBack: () -> Unit = {}
+    state: CityDetailsState, // Now receives state directly
+    onAction: (CityDetailsAction) -> Unit, // Now receives actions callback
+    modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-
     val configuration = LocalConfiguration.current
     val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
@@ -44,10 +53,10 @@ fun StaticMapScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopBar(
-                title = { Text(uiState.city.name) },
+                title = { Text(state.city.name) },
                 navigationIcon = {
                     if (isPortrait) {
-                        IconButton(onClick = onBack) {
+                        IconButton(onClick = { onAction(CityDetailsAction.OnBackIconClick) }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back"
@@ -57,10 +66,12 @@ fun StaticMapScreen(
                 }
             )
         }
-    ) { _ ->
-            StaticMap(
-                modifier = Modifier.fillMaxSize(),
-                uiState = uiState
-            )
+    ) {
+        StaticMap(
+            modifier = Modifier.fillMaxSize().padding(
+                top = it.calculateTopPadding()
+            ),
+            state = state
+        )
     }
 }

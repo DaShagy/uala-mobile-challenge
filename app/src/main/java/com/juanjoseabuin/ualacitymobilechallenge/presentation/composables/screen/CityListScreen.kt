@@ -26,7 +26,6 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,9 +65,9 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityList
 
 @Composable
 fun CityListScreenRoot(
-    viewModel: CityListViewModel, // Using viewModel() from androidx.lifecycle.viewmodel.compose
-    onCityCardClick: (Long) -> Unit, // This is for navigation to city details
-    onCityDetailsButtonClick: (Long) -> Unit, // This is for navigation to city details from button
+    viewModel: CityListViewModel,
+    onCityCardClick: (Long) -> Unit,
+    onCityDetailsButtonClick: (Long) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -78,19 +77,18 @@ fun CityListScreenRoot(
             when (action) {
                 is CityListAction.OnCityClick -> onCityCardClick(action.city.id)
                 is CityListAction.OnCityDetailsClick -> onCityDetailsButtonClick(action.city.id)
-                else -> Unit // Handle other actions or leave empty if they only update state
+                else -> Unit
             }
-            // Always pass the action to the ViewModel
+
             viewModel.onAction(action)
         }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CityListScreen(
-    state: CityListState, // Now receives state directly
-    onAction: (CityListAction) -> Unit, // Now receives actions callback
+    state: CityListState,
+    onAction: (CityListAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = state.selectedTabIndex) { 2 }
@@ -120,9 +118,8 @@ fun CityListScreen(
         topBar = {
             TopBar(
                 title = {
-                    Text(text = "City Explorer") // Fixed title for the whole screen
+                    Text(text = "City Explorer")
                 },
-                // Removed actions for filtering as tabs handle it now
             )
         },
         containerColor = DarkBlue,
@@ -134,7 +131,6 @@ fun CityListScreen(
                     start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr) + 16.dp,
                     end = innerPadding.calculateRightPadding(LayoutDirection.Ltr) + 16.dp,
                     top = innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding()
                 )
                 .fillMaxSize(), // Ensure column fills available space
             horizontalAlignment = Alignment.CenterHorizontally // Center search bar and tabs
@@ -142,7 +138,7 @@ fun CityListScreen(
             SearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                    .padding(vertical = 8.dp),
                 value = state.searchQuery,
                 onValueChange = { onAction(CityListAction.OnSearchQueryChange(it)) }, // Use onAction
                 placeholder = { Text("Search cities...") },
@@ -211,9 +207,9 @@ fun CityListScreen(
                                 CityListViewModel.ALL_CITIES_TAB_INDEX -> {
                                     // Content for "All Cities" tab
                                     if (state.isLoading) {
-                                        CircularProgressIndicator(color = DesertWhite)
+                                        CircularProgressIndicator(color = DarkBlue)
                                         Spacer(Modifier.height(8.dp))
-                                        Text("Loading initial data...", color = DesertWhite)
+                                        Text("Loading initial data...", color = DarkBlue)
                                     } else if (state.error != null) {
                                         Text(text = "Error: ${state.error}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                                     } else if (state.allCities.isEmpty() && state.selectedTabIndex == CityListViewModel.ALL_CITIES_TAB_INDEX) {
@@ -229,9 +225,9 @@ fun CityListScreen(
                                 CityListViewModel.FAVORITE_CITIES_TAB_INDEX -> {
                                     // Content for "Favorites" tab
                                     if (state.isLoading) { // Show loading if overall app is loading
-                                        CircularProgressIndicator(color = DesertWhite)
+                                        CircularProgressIndicator(color = DarkBlue)
                                         Spacer(Modifier.height(8.dp))
-                                        Text("Loading initial data...", color = DesertWhite)
+                                        Text("Loading initial data...", color = DarkBlue)
                                     } else if (state.error != null) {
                                         Text(text = "Error: ${state.error}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                                     } else if (state.favoriteCities.isEmpty() && state.selectedTabIndex == CityListViewModel.FAVORITE_CITIES_TAB_INDEX) {
@@ -270,7 +266,7 @@ private fun CityListContent(
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, bottom = 24.dp, end = 16.dp), // Apply horizontal padding here
+            .padding(horizontal = 16.dp), // Apply horizontal padding here
         verticalArrangement = Arrangement.spacedBy(16.dp),
         state = listState
     ) {
@@ -325,7 +321,7 @@ private fun CityCard(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp, end = 32.dp),
                             text = city.fullName ?: "${city.name}, ${city.country}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
@@ -365,8 +361,7 @@ private fun CityCard(
 
             AnimatedFavoriteIcon(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 4.dp, end = 4.dp),
+                    .align(Alignment.TopEnd),
                 onClick = onFavoriteIconClick,
                 isFavorite = city.isFavorite
             )

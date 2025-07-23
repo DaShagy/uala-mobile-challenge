@@ -13,12 +13,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityDetailsScreen
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityDetailsScreenRoot
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.CityListDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.StaticMapDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityListScreenRoot
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.StaticMapScreen
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.StaticMapScreenRoot
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.CityDetailsDestination
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAction
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
 
@@ -30,26 +31,25 @@ fun AdaptiveTwoPaneLayout(
     cityDetailsViewModel: CityDetailsAndMapViewModel,
     modifier: Modifier = Modifier
 ) {
-    val cityId = cityDetailsViewModel.uiState.collectAsState().value.city.id
+    val cityId = cityDetailsViewModel.state.collectAsState().value.city.id
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestinationRoute = currentBackStackEntry?.destination?.route
 
     val cityListScreen: @Composable () -> Unit = {
         CityListScreenRoot(
             viewModel = cityListViewModel,
             onCityCardClick = { cityId ->
-                cityDetailsViewModel.updateCityId(cityId = cityId)
+                cityDetailsViewModel.onAction(CityDetailsAction.LoadCityDetails(cityId))
                 navController.navigate(StaticMapDestination)
             },
             onCityDetailsButtonClick = { cityId ->
-                cityDetailsViewModel.updateCityId(cityId = cityId)
+                cityDetailsViewModel.onAction(CityDetailsAction.LoadCityDetails(cityId))
                 navController.navigate(CityDetailsDestination)
             }
         )
     }
 
     val staticMapScreen: @Composable () -> Unit = {
-        StaticMapScreen(
+        StaticMapScreenRoot(
             viewModel = cityDetailsViewModel,
             onBack = {
                 if (isPortrait) {
@@ -64,7 +64,7 @@ fun AdaptiveTwoPaneLayout(
     }
 
     val cityDetailScreen: @Composable () -> Unit = {
-        CityDetailsScreen(
+        CityDetailsScreenRoot(
             onBack = {
                 if (isPortrait) {
                     navController.popBackStack()
@@ -77,9 +77,6 @@ fun AdaptiveTwoPaneLayout(
                         }
                     }
                 }
-            },
-            onToggleFavoriteStatus = { cityId ->
-                //cityListViewModel.toggleCityFavoriteStatus(cityId)
             },
             viewModel = cityDetailsViewModel
         )
