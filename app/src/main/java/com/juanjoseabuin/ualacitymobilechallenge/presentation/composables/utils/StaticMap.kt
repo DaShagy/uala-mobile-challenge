@@ -14,23 +14,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMapZoomLevel.*
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsAndMapViewModel
-
-enum class StaticMapZoomLevel { CITY, COUNTRY }
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDetailsState
 
 @Composable
 fun StaticMap(
-    uiState: CityDetailsAndMapViewModel.CityDetailsUiState,
+    state: CityDetailsState,
     modifier: Modifier = Modifier,
-    zoomLevel: StaticMapZoomLevel = CITY
 ) {
-    val mapImageByteArray = when(zoomLevel) {
-        CITY -> uiState.cityMapImage
-        COUNTRY -> uiState.cityInCountyMapImage
-    }
 
     Column(
         modifier = modifier
@@ -40,14 +32,14 @@ fun StaticMap(
         verticalArrangement = Arrangement.Center
     ) {
         when {
-            uiState.city.id == -1L -> {
+            state.city.id == -1L -> {
                 Text(
                     text = "Select a city to view its map.",
                     color = DesertWhite
                 )
             }
 
-            uiState.isLoading -> {
+            state.isLoading -> {
                 CircularProgressIndicator(color = DesertWhite)
                 Text(
                     text = "Loading map...",
@@ -55,16 +47,16 @@ fun StaticMap(
                 )
             }
 
-            uiState.error != null -> {
+            state.error != null -> {
                 Text(
-                    text = "Map Error: ${uiState.error}",
+                    text = "Map Error: ${state.error}",
                     color = DesertWhite
                 )
             }
 
 
-            mapImageByteArray != null -> {
-                val imageBitmap: ImageBitmap? = mapImageByteArray.let {
+            state.cityMapImage != null -> {
+                val imageBitmap: ImageBitmap? = state.cityMapImage.let {
                     try {
                         BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap()
                     } catch (e: Exception) {
