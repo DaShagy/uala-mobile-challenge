@@ -3,8 +3,6 @@ package com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.scree
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,182 +15,297 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.juanjoseabuin.ualacitymobilechallenge.R
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.SearchBar
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.TopBar
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DarkBlue
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.DesertWhite
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.theme.SandYellow
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListAction
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListState
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
 
 @Composable
+fun CityListScreenRoot(
+    viewModel: CityListViewModel, // Using viewModel() from androidx.lifecycle.viewmodel.compose
+    onCityCardClick: (Long) -> Unit, // This is for navigation to city details
+    onCityDetailsButtonClick: (Long) -> Unit, // This is for navigation to city details from button
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    CityListScreen(
+        state = state,
+        onAction = { action ->
+            when (action) {
+                is CityListAction.OnCityClick -> onCityCardClick(action.city.id)
+                is CityListAction.OnCityDetailsClick -> onCityDetailsButtonClick(action.city.id)
+                else -> Unit // Handle other actions or leave empty if they only update state
+            }
+            // Always pass the action to the ViewModel
+            viewModel.onAction(action)
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun CityListScreen(
-    viewModel: CityListViewModel,
-    onCityCardClick: (Long) -> Unit,
-    onCityDetailsButtonClick: (Long) -> Unit,
+    state: CityListState, // Now receives state directly
+    onAction: (CityListAction) -> Unit, // Now receives actions callback
     modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val listState = rememberLazyListState()
+    val pagerState = rememberPagerState(initialPage = state.selectedTabIndex) { 2 }
+    val allCitiesListState = rememberLazyListState()
+    val favoriteCitiesListState = rememberLazyListState()
+
+    LaunchedEffect(state.allCities) {
+        allCitiesListState.animateScrollToItem(0)
+    }
+
+    LaunchedEffect(state.favoriteCities) {
+        favoriteCitiesListState.animateScrollToItem(0)
+    }
+
+    LaunchedEffect(state.selectedTabIndex) {
+        pagerState.animateScrollToPage(state.selectedTabIndex)
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage != state.selectedTabIndex) {
+            onAction(CityListAction.OnTabSelected(pagerState.currentPage))
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopBar(
                 title = {
-                    val title =
-                        if (uiState.isFilteringByFavorites) "Favorite Cities" else "All Cities"
-                    Text(text = title)
+                    Text(text = "City Explorer") // Fixed title for the whole screen
                 },
-                actions = {
-                    IconButton(onClick = { viewModel.onToggleFilteringByFavorites() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Toggle filtering by favorites",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                },
+                // Removed actions for filtering as tabs handle it now
             )
         },
         containerColor = DarkBlue,
         contentColor = DesertWhite,
     ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(
-                start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr) + 16.dp,
-                end = innerPadding.calculateRightPadding(LayoutDirection.Ltr) + 16.dp,
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding()
-            )
+            modifier = Modifier
+                .padding(
+                    start = innerPadding.calculateLeftPadding(LayoutDirection.Ltr) + 16.dp,
+                    end = innerPadding.calculateRightPadding(LayoutDirection.Ltr) + 16.dp,
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding()
+                )
+                .fillMaxSize(), // Ensure column fills available space
+            horizontalAlignment = Alignment.CenterHorizontally // Center search bar and tabs
         ) {
             SearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp, horizontal = 4.dp),
-                value = uiState.searchQuery,
-                onValueChange = { viewModel.onSearchQueryChanged(it) },
-                placeholder = { Text("Search cities...") }
+                value = state.searchQuery,
+                onValueChange = { onAction(CityListAction.OnSearchQueryChange(it)) }, // Use onAction
+                placeholder = { Text("Search cities...") },
             )
 
-            if (uiState.isLoading || (uiState.displayedCities.isEmpty() && uiState.searchQuery.isBlank())) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator(
-                        color = DesertWhite
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text("Loading initial data...")
-                }
-            } else if (uiState.error != null) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Error: ${uiState.error}")
-                }
-            } else if (uiState.noResultsFound) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "No cities found for \"${uiState.searchQuery}\"")
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    state = listState
-                ) {
-                    val displayedCities =
-                        if (uiState.isFilteringByFavorites) uiState.favoriteCities
-                        else uiState.displayedCities
+            // TabRow for "All Cities" and "Favorites"
+            Surface( // Use Surface to apply rounded corners to the TabRow background
+                modifier = Modifier
+                    .fillMaxWidth(),
+                color = DesertWhite,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp) // Apply shape here if you want it
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    TabRow( // Changed from TabRow to PrimaryTabRow for better theming
+                        selectedTabIndex = state.selectedTabIndex,
+                        modifier = Modifier
+                            .padding(vertical = 12.dp)
+                            .fillMaxWidth(),
+                        containerColor = Color.Transparent, // Ensure transparent if Surface sets background
+                        indicator = { tabPositions ->
+                            TabRowDefaults.PrimaryIndicator( // Use PrimaryIndicator for consistent theming
+                                color = SandYellow,
+                                modifier = Modifier
+                                    .tabIndicatorOffset(tabPositions[state.selectedTabIndex])
+                            )
+                        }
+                    ) {
+                        Tab(
+                            selected = state.selectedTabIndex == CityListViewModel.ALL_CITIES_TAB_INDEX,
+                            onClick = { onAction(CityListAction.OnTabSelected(CityListViewModel.ALL_CITIES_TAB_INDEX)) },
+                            modifier = Modifier.weight(1f),
+                            selectedContentColor = SandYellow,
+                            unselectedContentColor = Color.Black.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "All Cities", // Use stringResource if available (e.g., R.string.all_cities)
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                        }
+                        Tab(
+                            selected = state.selectedTabIndex == CityListViewModel.FAVORITE_CITIES_TAB_INDEX,
+                            onClick = { onAction(CityListAction.OnTabSelected(CityListViewModel.FAVORITE_CITIES_TAB_INDEX)) },
+                            modifier = Modifier.weight(1f),
+                            selectedContentColor = SandYellow,
+                            unselectedContentColor = Color.Black.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "Favorites", // Use stringResource if available (e.g., R.string.favorites)
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp)) // Space between tabs and pager
 
-                    items(
-                        count = displayedCities.size,
-                        key = { index -> displayedCities[index].id }
-                    ) { index ->
-                        val city = displayedCities[index]
-
-                        CityCard(
-                            city = city,
-                            onCardClick = onCityCardClick,
-                            onFavoriteIconClick = {
-                                viewModel.toggleCityFavoriteStatus(it)
-                            },
-                            onDetailsButtonClick = {
-                                onCityDetailsButtonClick(it.id)
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f) // Let pager take remaining vertical space
+                    ) { pageIndex ->
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            when (pageIndex) {
+                                CityListViewModel.ALL_CITIES_TAB_INDEX -> {
+                                    // Content for "All Cities" tab
+                                    if (state.isLoading) {
+                                        CircularProgressIndicator(color = DesertWhite)
+                                        Spacer(Modifier.height(8.dp))
+                                        Text("Loading initial data...", color = DesertWhite)
+                                    } else if (state.error != null) {
+                                        Text(text = "Error: ${state.error}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                                    } else if (state.allCities.isEmpty() && state.selectedTabIndex == CityListViewModel.ALL_CITIES_TAB_INDEX) {
+                                        Text(text = "No cities found for \"${state.searchQuery}\"", textAlign = TextAlign.Center)
+                                    } else {
+                                        CityListContent(
+                                            cities = state.allCities,
+                                            listState = allCitiesListState,
+                                            onAction = onAction
+                                        )
+                                    }
+                                }
+                                CityListViewModel.FAVORITE_CITIES_TAB_INDEX -> {
+                                    // Content for "Favorites" tab
+                                    if (state.isLoading) { // Show loading if overall app is loading
+                                        CircularProgressIndicator(color = DesertWhite)
+                                        Spacer(Modifier.height(8.dp))
+                                        Text("Loading initial data...", color = DesertWhite)
+                                    } else if (state.error != null) {
+                                        Text(text = "Error: ${state.error}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+                                    } else if (state.favoriteCities.isEmpty() && state.selectedTabIndex == CityListViewModel.FAVORITE_CITIES_TAB_INDEX) {
+                                        Text(
+                                            text = when {
+                                                state.searchQuery.isNotBlank() -> "No favorite cities found for \"${state.searchQuery}\""
+                                                else -> "You don't have any favorite cities yet."
+                                            },
+                                            textAlign = TextAlign.Center
+                                        )
+                                    } else {
+                                        CityListContent(
+                                            cities = state.favoriteCities,
+                                            listState = favoriteCitiesListState,
+                                            onAction = onAction
+                                        )
+                                    }
+                                }
                             }
-                        )
+                        }
                     }
                 }
             }
         }
     }
+}
 
-    LaunchedEffect(uiState.isFilteringByFavorites, uiState.searchQuery) {
-        listState.scrollToItem(0)
+// Extracted the LazyColumn content into a separate composable for clarity
+@Composable
+private fun CityListContent(
+    cities: List<CityUiItem>,
+    listState: LazyListState,
+    onAction: (CityListAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, bottom = 24.dp, end = 16.dp), // Apply horizontal padding here
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        state = listState
+    ) {
+        items(
+            count = cities.size,
+            key = { index -> cities[index].id }
+        ) { index ->
+            val city = cities[index]
+            CityCard(
+                city = city,
+                onCardClick = { onAction(CityListAction.OnCityClick(city)) },
+                onFavoriteIconClick = { onAction(CityListAction.OnToggleCityFavoriteStatus(city.id)) },
+                onDetailsButtonClick = { onAction(CityListAction.OnCityDetailsClick(city)) }
+            )
+        }
     }
 }
+
 
 @Composable
 private fun CityCard(
     city: CityUiItem,
-    onCardClick: (Long) -> Unit,
-    onFavoriteIconClick: (Long) -> Unit,
-    onDetailsButtonClick: (CityUiItem) -> Unit,
+    onCardClick: () -> Unit,
+    onFavoriteIconClick: () -> Unit,
+    onDetailsButtonClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        onClick = { onCardClick(city.id) },
+        onClick = onCardClick,
         colors = CardColors(
-            containerColor = DesertWhite,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            containerColor = DarkBlue,
+            contentColor = DesertWhite,
             disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
             disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
         )
@@ -223,7 +336,7 @@ private fun CityCard(
                             text = "Lat: ${city.coord.lat}, Lon: ${city.coord.lon}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = DarkBlue.copy(alpha = 0.65f),
+                            color = DesertWhite.copy(alpha = 0.66f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -237,7 +350,13 @@ private fun CityCard(
                 ) {
                     Button(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { onDetailsButtonClick(city) }
+                        onClick = onDetailsButtonClick,
+                        colors = ButtonColors(
+                            containerColor = DesertWhite,
+                            contentColor = DarkBlue,
+                            disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     ) {
                         Text("Details")
                     }
@@ -248,7 +367,7 @@ private fun CityCard(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 4.dp, end = 4.dp),
-                onClick = { onFavoriteIconClick(city.id) },
+                onClick = onFavoriteIconClick,
                 isFavorite = city.isFavorite
             )
         }
@@ -263,45 +382,39 @@ fun BoxScope.AnimatedFavoriteIcon(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // --- Animation Logic for IconButton Icon ---
-    // Determine the current state for the animation transition
     val favoriteIconState = if (isFavorite) FavoriteIconState.Filled else FavoriteIconState.Outlined
-
-    // Create a transition based on the favoriteIconState
     val transition = updateTransition(favoriteIconState, label = "favoriteIconTransition")
 
-    // Animate the scale of the icon
     val iconScale by transition.animateFloat(
         transitionSpec = {
-            // Define the animation spec (e.g., spring for a bouncy effect)
             when {
                 FavoriteIconState.Outlined isTransitioningTo FavoriteIconState.Filled ->
-                    spring (dampingRatio = Spring .DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
-                else -> // For other transitions, e.g., filled to outlined
+                    spring (dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                else ->
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
             }
         },
         label = "iconScale"
     ) { state ->
         when (state) {
-            FavoriteIconState.Filled -> 1.2f // Icon scales up when it becomes filled
-            FavoriteIconState.Outlined -> 1.0f // Icon returns to normal size when outlined
+            FavoriteIconState.Filled -> 1.2f
+            FavoriteIconState.Outlined -> 1.0f
         }
     }
-    // --- End Animation Logic ---
 
     IconButton(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .align(Alignment.TopEnd)
             .padding(top = 8.dp, end = 8.dp)
     ) {
         Icon(
             modifier = Modifier
                 .requiredSize(24.dp)
-                .graphicsLayer(scaleX = iconScale, scaleY = iconScale), // Apply the animated scale here
+                .graphicsLayer(scaleX = iconScale, scaleY = iconScale),
             imageVector = ImageVector.vectorResource(if (isFavorite) R.drawable.ic_heart_filled else R.drawable.ic_heart_outlined),
-            contentDescription = "Favorite"
+            contentDescription = "Favorite",
+            tint = DesertWhite
         )
     }
 }
