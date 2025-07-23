@@ -21,12 +21,4 @@ interface CityRepository {
     suspend fun getCityById(id: Long): City?
 
     suspend fun toggleCityFavoriteStatusById(id: Long)
-
-    suspend fun getStaticMapForCoordinates(
-        coordinates: Coordinates,
-        width: Int,
-        height: Int,
-        zoom: Int,
-        mapType: String
-    ): ByteArray?
 }

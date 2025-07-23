@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.juanjoseabuin.ualacitymobilechallenge.domain.model.StaticMapConfig
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CityRepository
 import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.CountryRepository
+import com.juanjoseabuin.ualacitymobilechallenge.domain.repository.MapRepository
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.utils.StaticMapState
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CountryUiItem
@@ -28,6 +30,7 @@ import javax.inject.Inject
 class CityDetailsViewModel @Inject constructor(
     private val cityRepository: CityRepository,
     private val countryRepository: CountryRepository,
+    private val mapRepository: MapRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -42,6 +45,7 @@ class CityDetailsViewModel @Inject constructor(
             isLoading = false
         )
     )
+
     // Expose immutable StateFlow to the UI
     val state: StateFlow<CityDetailsState> = _state.asStateFlow()
 
@@ -56,7 +60,7 @@ class CityDetailsViewModel @Inject constructor(
                     loadStaticMapForCurrentCity()
                 } else if (city.id == -1L) {
                     // Reset map images and loading state if city becomes unselected
-                    _state.update { it.copy(isLoading = false, error = null, cityMapImage = null, ) }
+                    _state.update { it.copy(isLoading = false, error = null, cityMapImage = null) }
                 }
             }
             .launchIn(viewModelScope) // Launch this flow collector in the ViewModel's scope
@@ -75,9 +79,11 @@ class CityDetailsViewModel @Inject constructor(
             is CityDetailsAction.LoadCityDetails -> {
                 loadCityDetails(action.cityId)
             }
+
             is CityDetailsAction.RefreshMapImages -> {
                 loadStaticMapForCurrentCity()
             }
+
             CityDetailsAction.OnBackIconClick -> Unit
         }
     }
@@ -96,17 +102,31 @@ class CityDetailsViewModel @Inject constructor(
                     val cityDomain = cityRepository.getCityById(cityId)
                     if (cityDomain != null) {
                         val countryDomain = countryRepository.getCountry(cityDomain.country)
-                        _state.update { it.copy(
-                            city = cityDomain.toUiItem(),
-                            country = countryDomain?.toUiItem() ?: CountryUiItem(),
-                            isLoading = false // Set loading to false once initial data is fetched
-                        ) }
+                        _state.update {
+                            it.copy(
+                                city = cityDomain.toUiItem(),
+                                country = countryDomain?.toUiItem() ?: CountryUiItem(),
+                                isLoading = false // Set loading to false once initial data is fetched
+                            )
+                        }
                     } else {
-                        _state.update { it.copy(city = CityUiItem(), error = "City with ID $cityId not found.", isLoading = false) }
+                        _state.update {
+                            it.copy(
+                                city = CityUiItem(),
+                                error = "City with ID $cityId not found.",
+                                isLoading = false
+                            )
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching city details for ID $cityId: ${e.message}", e)
-                    _state.update { it.copy(city = CityUiItem(), error = "Error fetching city: ${e.message}", isLoading = false) }
+                    _state.update {
+                        it.copy(
+                            city = CityUiItem(),
+                            error = "Error fetching city: ${e.message}",
+                            isLoading = false
+                        )
+                    }
                 }
             } else {
                 // If cityId is -1L, reset the state to default/empty
@@ -129,15 +149,22 @@ class CityDetailsViewModel @Inject constructor(
                 return@launch
             }
 
-            _state.update { it.copy(isLoading = true, error = null) } // Set loading true for map fetch
+            _state.update {
+                it.copy(
+                    isLoading = true,
+                    error = null
+                )
+            } // Set loading true for map fetch
 
             try {
-                val cityMapBytes = cityRepository.getStaticMapForCoordinates(
-                    coordinates = cityUiItem.coord.toDomain(),
-                    width = MAP_IMAGE_WIDTH,
-                    height = MAP_IMAGE_HEIGHT,
-                    zoom = CITY_MAP_ZOOM,
-                    mapType = MAP_TYPE
+                val cityMapBytes = mapRepository.getStaticMap(
+                    StaticMapConfig.CityMap(
+                        coordinates = cityUiItem.coord.toDomain(),
+                        width = MAP_IMAGE_WIDTH,
+                        height = MAP_IMAGE_HEIGHT,
+                        zoom = CITY_MAP_ZOOM,
+                        mapType = MAP_TYPE
+                    )
                 )
 
                 _state.update { it.copy(cityMapImage = cityMapBytes) }
@@ -155,7 +182,8 @@ class CityDetailsViewModel @Inject constructor(
     }
 
     companion object {
-        private const val DETAILS_CITY_ID_KEY = "city_details_city_id" // Specific key for CityDetails
+        private const val DETAILS_CITY_ID_KEY =
+            "city_details_city_id" // Specific key for CityDetails
         private const val TAG = "CityDetailsViewModel"
 
         const val MAP_IMAGE_WIDTH = 640
