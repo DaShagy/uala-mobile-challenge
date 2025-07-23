@@ -8,6 +8,10 @@ interface CityLocalDataSource {
     suspend fun updateCity(city: City)
     suspend fun insertCities(cities: List<City>)
     suspend fun getCityCount(): Int
-    fun getPaginatedCities(limit: Int, offset: Int, searchQuery: String?): Flow<List<City>>
-    fun getPaginatedFavoriteCities(limit: Int, offset: Int): Flow<List<City>>
+    fun getPaginatedCities(
+        limit: Int,
+        offset: Int,
+        searchQuery: String?,
+        onlyFavorites: Boolean
+    ): Flow<List<City>>
 }
