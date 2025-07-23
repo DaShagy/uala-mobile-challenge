@@ -16,7 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityDetailsScreen
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.CityListDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.StaticMapDestination
-import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityListScreen
+import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.CityListScreenRoot
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.composables.screen.StaticMapScreen
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.navigation.CityDetailsDestination
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityListViewModel
@@ -35,7 +35,7 @@ fun AdaptiveTwoPaneLayout(
     val currentDestinationRoute = currentBackStackEntry?.destination?.route
 
     val cityListScreen: @Composable () -> Unit = {
-        CityListScreen(
+        CityListScreenRoot(
             viewModel = cityListViewModel,
             onCityCardClick = { cityId ->
                 cityDetailsViewModel.updateCityId(cityId = cityId)
@@ -79,7 +79,7 @@ fun AdaptiveTwoPaneLayout(
                 }
             },
             onToggleFavoriteStatus = { cityId ->
-                cityListViewModel.toggleCityFavoriteStatus(cityId)
+                //cityListViewModel.toggleCityFavoriteStatus(cityId)
             },
             viewModel = cityDetailsViewModel
         )

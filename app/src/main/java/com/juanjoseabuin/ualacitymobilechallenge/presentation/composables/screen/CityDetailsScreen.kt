@@ -43,9 +43,9 @@ import com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel.CityDeta
 @Composable
 fun CityDetailsScreen(
     onBack: () -> Unit,
-    onToggleFavoriteStatus: (Long) -> Unit,
+    viewModel: CityDetailsAndMapViewModel,
     modifier: Modifier = Modifier,
-    viewModel: CityDetailsAndMapViewModel = hiltViewModel(),
+    onToggleFavoriteStatus: (Long) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val city = uiState.city

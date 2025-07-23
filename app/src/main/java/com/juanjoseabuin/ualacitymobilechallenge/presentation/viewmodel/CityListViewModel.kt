@@ -1,5 +1,6 @@
 package com.juanjoseabuin.ualacitymobilechallenge.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,7 +9,7 @@ import com.juanjoseabuin.ualacitymobilechallenge.domain.utils.SearchCityUtils.se
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.CityUiItem
 import com.juanjoseabuin.ualacitymobilechallenge.presentation.model.toUiItem
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,157 +20,188 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
-@OptIn(FlowPreview::class)
+
 class CityListViewModel @Inject constructor(
     private val repository: CityRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
-        CityListUiState(
-            isLoading = true,
-            searchQuery = savedStateHandle.get<String>(SEARCH_QUERY_KEY) ?: ""
+    // Internal mutable StateFlow, represents the single source of truth for UI state
+    private val _state = MutableStateFlow(
+        CityListState(
+            isLoading = true, // Initial loading state
+            searchQuery = "",
         )
     )
-    val uiState: StateFlow<CityListUiState> = _uiState.asStateFlow()
+    val state: StateFlow<CityListState> = _state.asStateFlow() // Expose as immutable StateFlow
 
+    // Optimistic favorite changes: Map of cityId to its *optimistic* isFavorite status
     private val _optimisticFavoriteChanges = MutableStateFlow<Map<Long, Boolean>>(emptyMap())
 
+    // Job to cancel previous search/filter requests (good practice for `flatMapLatest`)
+    private var dataCollectionJob: Job? = null
+
     init {
-        // Main flow for all cities, incorporating optimistic updates and search filtering
-        repository.getCities()
-            .combine(_optimisticFavoriteChanges) { actualCities, optimisticChanges ->
-                // Apply optimistic changes on top of actual data from the repository
-                actualCities.map { city ->
-                    optimisticChanges[city.id]?.let { isFavoriteOptimistic ->
-                        city.copy(isFavorite = isFavoriteOptimistic)
-                    } ?: city // Use optimistic status if present, else use actual status
-                }
-            }
-            .combine(_uiState.map { it.searchQuery }) { combinedCities, searchQuery ->
-                // Then apply search filtering
-                if (searchQuery.isBlank()) {
-                    combinedCities
-                } else {
-                    combinedCities.searchByPrefix(searchQuery)
-                }
-            }
-            .debounce(300.milliseconds)
-            .distinctUntilChanged()
-            .onEach { filteredCities ->
-                _uiState.update { currentState ->
-                    val noResults = filteredCities.isEmpty() &&
-                            currentState.searchQuery.isNotBlank() &&
-                            currentState.error == null
+        // Centralized data observation and processing
+        dataCollectionJob = combine(
+            repository.getCities(), // All cities from DB
+            repository.getFavoriteCities(), // All favorite cities from DB
+            _state.map { it.searchQuery }.debounce(300.milliseconds).distinctUntilChanged(), // Debounced search query
+            _optimisticFavoriteChanges // Optimistic updates
+        ) { allCities, favoriteCities, searchQuery, optimisticChanges ->
 
+            // 1. Apply optimistic updates to both lists
+            val allCitiesWithOptimistic = allCities.map { city ->
+                optimisticChanges[city.id]?.let { isFavoriteOptimistic ->
+                    city.copy(isFavorite = isFavoriteOptimistic)
+                } ?: city
+            }
+
+            val favoriteCitiesWithOptimistic = favoriteCities.map { city ->
+                optimisticChanges[city.id]?.let { isFavoriteOptimistic ->
+                    city.copy(isFavorite = isFavoriteOptimistic)
+                } ?: city
+            }
+
+            // 2. Apply search filter to both lists
+            val searchedAllCities = if (searchQuery.isBlank()) {
+                allCitiesWithOptimistic
+            } else {
+                allCitiesWithOptimistic.searchByPrefix(searchQuery)
+            }
+
+            val searchedFavoriteCities = if (searchQuery.isBlank()) {
+                favoriteCitiesWithOptimistic
+            } else {
+                favoriteCitiesWithOptimistic.searchByPrefix(searchQuery)
+            }.filter { it.isFavorite } // Ensure only actual favorites (or optimistically favorited) are in this list
+
+            Pair(searchedAllCities, searchedFavoriteCities)
+        }
+            .onStart {
+                // Indicate loading when the main data collection flow starts
+                _state.update { it.copy(isLoading = true, error = null) }
+            }
+            .onEach { (searchedAllCities, searchedFavoriteCities) ->
+                _state.update { currentState ->
                     currentState.copy(
-                        displayedCities = filteredCities.map { it.toUiItem() },
-                        noResultsFound = noResults,
+                        allCities = searchedAllCities.map { it.toUiItem() },
+                        favoriteCities = searchedFavoriteCities.map { it.toUiItem() },
                         isLoading = false,
-                        error = null
+                        error = null,
                     )
                 }
             }
             .catch { e ->
-                _uiState.update {
+                Log.e(TAG, "Error in data collection: ${e.message}", e)
+                _state.update {
                     it.copy(
-                        error = "Error loading/filtering cities: ${e.message}",
-                        isLoading = false
+                        error = "Error loading cities: ${e.message}",
+                        isLoading = false,
                     )
                 }
             }
-            .launchIn(viewModelScope)
+            .launchIn(viewModelScope) // Launch the main data collection flow
 
+        Log.i(TAG, "ViewModel init complete. Observing for state changes.")
+    }
 
-        // Flow for favorite cities, also incorporating optimistic updates
-        repository.getFavoriteCities()
-            .combine(_optimisticFavoriteChanges) { actualFavorites, optimisticChanges ->
-                // Apply optimistic changes. Filter to ensure only actual favorites or optimistically favorited appear.
-                actualFavorites.map { fav ->
-                    optimisticChanges[fav.id]?.let { isFavoriteOptimistic ->
-                        fav.copy(isFavorite = isFavoriteOptimistic)
-                    } ?: fav
-                }.filter { it.isFavorite } // Ensure only favorites are in this list
+    /**
+     * Central function to handle all incoming UI actions (Intents).
+     */
+    fun onAction(action: CityListAction) {
+        when (action) {
+            is CityListAction.OnSearchQueryChange -> {
+                _state.update { it.copy(searchQuery = action.query) }
             }
-            .combine(_uiState.map { it.searchQuery }) { combinedCities, searchQuery ->
-                // Then apply search filtering
-                if (searchQuery.isBlank()) {
-                    combinedCities
-                } else {
-                    combinedCities.searchByPrefix(searchQuery)
+            is CityListAction.OnTabSelected -> {
+                _state.update { currentState ->
+                    currentState.copy(
+                        selectedTabIndex = action.tabIndex,
+                        searchQuery = "" // Clear search when switching tabs for a clean state
+                    )
                 }
+                savedStateHandle[SELECTED_TAB_INDEX_KEY] = action.tabIndex
             }
-            .debounce(300.milliseconds)
-            .distinctUntilChanged()
-            .catch { e ->
-                _uiState.update { it.copy(error = "Error fetching favorites: ${e.message}") }
-                emit(emptyList())
+            is CityListAction.OnToggleCityFavoriteStatus -> {
+                toggleCityFavoriteStatus(action.cityId)
             }
-            .onEach { favorites ->
-                _uiState.update { it.copy(favoriteCities = favorites.map { city -> city.toUiItem() }) }
-            }
-            .launchIn(viewModelScope)
+
+            is CityListAction.OnCityClick -> Unit
+            is CityListAction.OnCityDetailsClick -> Unit
+        }
     }
 
-    fun onSearchQueryChanged(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
-        savedStateHandle[SEARCH_QUERY_KEY] = query
-    }
-
-    fun onToggleFilteringByFavorites() {
-        _uiState.update { it.copy(isFilteringByFavorites = !uiState.value.isFilteringByFavorites, searchQuery = "") }
-    }
-
-    fun toggleCityFavoriteStatus(cityId: Long) {
+    /**
+     * Toggles the favorite status of a city by its ID.
+     * Includes optimistic updates to the UI.
+     * @param cityId The ID of the city to toggle.
+     */
+    private fun toggleCityFavoriteStatus(cityId: Long) {
         viewModelScope.launch {
+            Log.d(TAG, "ViewModel: Toggling favorite status for city ID: $cityId")
 
-            val currentDisplayedStatus = _uiState.value.displayedCities
-                .firstOrNull { it.id == cityId }?.isFavorite
-                ?: false
+            // Determine current actual status from the main 'allCities' list in state (or repository if more robust check needed)
+            val currentActualStatus = _state.value.allCities.firstOrNull { it.id == cityId }?.isFavorite
+                ?: false // Default to false if not found
 
-            val newOptimisticStatus = !currentDisplayedStatus
+            val newOptimisticStatus = !currentActualStatus
 
+            // Apply optimistic update
             _optimisticFavoriteChanges.update { currentMap ->
-                val updatedMap = currentMap + (cityId to newOptimisticStatus)
-                updatedMap
+                currentMap + (cityId to newOptimisticStatus)
             }
-
-            _uiState.update { it.copy(togglingCityIds = it.togglingCityIds + cityId) }
+            _state.update { it.copy(togglingCityIds = it.togglingCityIds + cityId) }
 
             try {
                 repository.toggleCityFavoriteStatusById(cityId)
-
-            } catch (e: Exception) {
+                Log.i(TAG, "ViewModel: Successfully toggled favorite status for city ID: $cityId")
+                // On success, clear the optimistic change for this item
                 _optimisticFavoriteChanges.update { currentMap ->
-                    val updatedMap = currentMap + (cityId to currentDisplayedStatus) // Revert to original status
-                    updatedMap
+                    currentMap - cityId
                 }
-                _uiState.update { it.copy(error = "Failed to toggle favorite status for ID $cityId: ${e.message}") }
-
+            } catch (e: Exception) {
+                Log.e(TAG, "ViewModel: Error toggling favorite status for city ID $cityId: ${e.message}", e)
+                // On error, revert the optimistic change
+                _optimisticFavoriteChanges.update { currentMap ->
+                    currentMap + (cityId to currentActualStatus) // Revert to original status
+                }
+                _state.update { it.copy(error = "Failed to toggle favorite status for ID $cityId: ${e.message}") }
             } finally {
-                _uiState.update { it.copy(togglingCityIds = it.togglingCityIds - cityId) }
+                _state.update { it.copy(togglingCityIds = it.togglingCityIds - cityId) }
             }
         }
     }
 
-    data class CityListUiState(
-        val displayedCities: List<CityUiItem> = emptyList(),
-        val favoriteCities: List<CityUiItem> = emptyList(),
-        val searchQuery: String = "",
-        val isLoading: Boolean = false,
-        val error: String? = null,
-        val noResultsFound: Boolean = false,
-        val togglingCityIds: Set<Long> = emptySet(),
-        val isFilteringByFavorites: Boolean = false,
-    )
-
     companion object {
-        private const val SEARCH_QUERY_KEY = "city_list_search_query"
+        private const val SELECTED_TAB_INDEX_KEY = "selected_tab_index" // New key for saved state
+        const val ALL_CITIES_TAB_INDEX = 0
+        const val FAVORITE_CITIES_TAB_INDEX = 1
+        private const val TAG = "CityListViewModel"
     }
 }
+
+sealed class CityListAction {
+    data class OnSearchQueryChange(val query: String) : CityListAction()
+    data class OnTabSelected(val tabIndex: Int) : CityListAction() // New action for tab selection
+    data class OnToggleCityFavoriteStatus(val cityId: Long) : CityListAction()
+    data class OnCityClick(val city: CityUiItem) : CityListAction()
+    data class OnCityDetailsClick(val city: CityUiItem) : CityListAction()
+}
+
+data class CityListState(
+    val allCities: List<CityUiItem> = emptyList(), // Store all cities (after search, before favorite filter)
+    val favoriteCities: List<CityUiItem> = emptyList(), // Store only favorite cities (after search)
+    val searchQuery: String = "",
+    val isLoading: Boolean = false, // True for initial or full data load
+    val error: String? = null,
+    val togglingCityIds: Set<Long> = emptySet(), // Set of IDs currently being toggled
+    val selectedTabIndex: Int = CityListViewModel.ALL_CITIES_TAB_INDEX
+)
