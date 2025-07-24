@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+#Exponiendo secretos para el correcto funcionamiento de la app de prueba
+#Estos no deben ser expuestos en aplicaciones de producción
+#/secrets.properties
+#secrets.properties
