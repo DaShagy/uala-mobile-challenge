@@ -55,9 +55,10 @@ class CityDetailsViewModel @Inject constructor(
             .map { it.city }
             .distinctUntilChanged()
             .onEach { city ->
-                if (city.id != -1L) {
+                if (city.id != -1L && _state.value.cityMapImage == null) {
+                    // Only load maps if a city is selected AND maps haven't been loaded yet
                     loadStaticMapForCurrentCity()
-                } else {
+                } else if (city.id == -1L) {
                     // Reset map images and loading state if city becomes unselected
                     _state.update { it.copy(isLoading = false, error = null, cityMapImage = null) }
                 }
