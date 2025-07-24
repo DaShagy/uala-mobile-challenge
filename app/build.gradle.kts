@@ -72,6 +72,7 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.core.ktx)
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.paging.runtime.ktx)
@@ -85,6 +86,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
 
+    testImplementation(libs.robolectric)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
@@ -96,4 +98,5 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    testImplementation(kotlin("test"))
 }
